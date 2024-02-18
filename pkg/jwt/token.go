@@ -24,7 +24,6 @@ type (
 )
 
 func BuildTokens(opt TokenOptions) (Token, error) {
-
 	var err error
 	now := time.Now().Add(-time.Minute).Unix()
 	token := Token{
@@ -42,21 +41,6 @@ func BuildTokens(opt TokenOptions) (Token, error) {
 	if err != nil {
 		return token, err
 	}
-
-	claims := jwt.MapClaims{
-		"iat": now,
-		"exp": now + opt.AccessExpire,
-	}
-	for k, v := range opt.Fields {
-		claims[k] = v
-	}
-	t := jwt.New(jwt.SigningMethodHS256)
-	t.Claims = claims
-	token.AccessToken, err = t.SignedString([]byte(opt.AccessSecret))
-
-	claims["exp"] = now + opt.RefreshExpire
-	t.Claims = claims
-	token.RefreshToken, err = t.SigningString([]byte(opt.RefreshSecret))
 
 	return token, nil
 }
