@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"beyond/application/user/user"
+	"beyond/application/user/rpc/user"
 	"context"
 	"encoding/json"
 

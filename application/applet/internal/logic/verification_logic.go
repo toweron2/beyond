@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"beyond/application/user/user"
+	"beyond/application/user/rpc/user"
 	"beyond/pkg/util"
 	"context"
 	"fmt"

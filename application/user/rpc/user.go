@@ -1,13 +1,12 @@
 package main
 
 import (
+	"beyond/application/user/rpc/internal/config"
+	"beyond/application/user/rpc/internal/server"
+	"beyond/application/user/rpc/internal/svc"
+	"beyond/application/user/rpc/service"
 	"flag"
 	"fmt"
-
-	"beyond/application/user/internal/config"
-	"beyond/application/user/internal/server"
-	"beyond/application/user/internal/svc"
-	"beyond/application/user/service"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	cs "github.com/zeromicro/go-zero/core/service"
@@ -32,7 +31,13 @@ func main() {
 			reflection.Register(grpcServer)
 		}
 	})
+	// 自定义拦截器
+	s.AddUnaryInterceptors(interceptors.ServerErrorInterceptor())
+
 	defer s.Stop()
+
+	// 服务注册
+	// consul.Re
 
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
 	s.Start()

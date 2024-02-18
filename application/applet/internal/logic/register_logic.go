@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"beyond/application/user/user"
+	"beyond/application/user/rpc/user"
 	"context"
 	"errors"
 	"github.com/zeromicro/go-zero/core/stores/redis"

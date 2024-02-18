@@ -2,7 +2,7 @@ package svc
 
 import (
 	"beyond/application/applet/internal/config"
-	"beyond/application/user/user"
+	"beyond/application/user/rpc/user"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -17,7 +17,7 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	// 自定义拦截器
 	// userRPC := zrpc.MustNewClient(c.UserRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor*()))
-	redis, err := redis.NewRedis(c.BizRedis)
+	rds, err := redis.NewRedis(c.BizRedis)
 	if err != nil {
 		logx.Errorf("errors : %v", err)
 		return nil
@@ -25,6 +25,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:   c,
 		UserRpc:  user.NewUser(zrpc.MustNewClient(c.UserRPC)),
-		BizRedis: redis,
+		BizRedis: rds,
 	}
 }
