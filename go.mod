@@ -28,6 +28,11 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/gonum/blas v0.0.0-20181208220705-f22b278b28ac // indirect
+	github.com/gonum/floats v0.0.0-20181209220543-c233463c7e82 // indirect
+	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
+	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
+	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
@@ -73,6 +78,7 @@ require (
 	golang.org/x/term v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
+	gonum.org/v1/gonum v0.14.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230525234035-dd9d682886f9 // indirect
