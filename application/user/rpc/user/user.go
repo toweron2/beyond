@@ -4,22 +4,23 @@
 package user
 
 import (
-	service2 "beyond/application/user/rpc/service"
 	"context"
+
+	"beyond/application/user/rpc/service"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 )
 
 type (
-	FindByIdRequest      = service2.FindByIdRequest
-	FindByIdResponse     = service2.FindByIdResponse
-	FindByMobileRequest  = service2.FindByMobileRequest
-	FindByMobileResponse = service2.FindByMobileResponse
-	RegisterRequest      = service2.RegisterRequest
-	RegisterResponse     = service2.RegisterResponse
-	SendSmsRequest       = service2.SendSmsRequest
-	SendSmsResponse      = service2.SendSmsResponse
+	FindByIdRequest      = service.FindByIdRequest
+	FindByIdResponse     = service.FindByIdResponse
+	FindByMobileRequest  = service.FindByMobileRequest
+	FindByMobileResponse = service.FindByMobileResponse
+	RegisterRequest      = service.RegisterRequest
+	RegisterResponse     = service.RegisterResponse
+	SendSmsRequest       = service.SendSmsRequest
+	SendSmsResponse      = service.SendSmsResponse
 
 	User interface {
 		Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
@@ -40,21 +41,21 @@ func NewUser(cli zrpc.Client) User {
 }
 
 func (m *defaultUser) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
-	client := service2.NewUserClient(m.cli.Conn())
+	client := service.NewUserClient(m.cli.Conn())
 	return client.Register(ctx, in, opts...)
 }
 
 func (m *defaultUser) FindById(ctx context.Context, in *FindByIdRequest, opts ...grpc.CallOption) (*FindByIdResponse, error) {
-	client := service2.NewUserClient(m.cli.Conn())
+	client := service.NewUserClient(m.cli.Conn())
 	return client.FindById(ctx, in, opts...)
 }
 
 func (m *defaultUser) FindByMobile(ctx context.Context, in *FindByMobileRequest, opts ...grpc.CallOption) (*FindByMobileResponse, error) {
-	client := service2.NewUserClient(m.cli.Conn())
+	client := service.NewUserClient(m.cli.Conn())
 	return client.FindByMobile(ctx, in, opts...)
 }
 
 func (m *defaultUser) SendSms(ctx context.Context, in *SendSmsRequest, opts ...grpc.CallOption) (*SendSmsResponse, error) {
-	client := service2.NewUserClient(m.cli.Conn())
+	client := service.NewUserClient(m.cli.Conn())
 	return client.SendSms(ctx, in, opts...)
 }
