@@ -125,6 +125,7 @@ func CodeFromError(err error) XCode {
 	return ServerErr
 }
 
+// FromError 将自定义的业务错误转换为grpc status
 func FromError(err error) *status.Status {
 	err = errors.Cause(err)
 	if code, ok := err.(XCode); ok {
@@ -138,12 +139,15 @@ func FromError(err error) *status.Status {
 	case context.Canceled:
 		grpcStatus, _ = gRpcStatusFromXcode(Canceled)
 	case context.DeadlineExceeded:
+		grpcStatus, _ = gRpcStatusFromXcode(Deadline)
+	default:
 		grpcStatus, _ = status.FromError(err)
 	}
 
 	return grpcStatus
 }
 
+// gRpcStatusFromXcode 通过WithDetails方法将自定义业务错误码存放到detail中
 func gRpcStatusFromXcode(code XCode) (*status.Status, error) {
 	var sts *Status
 	switch v := code.(type) {

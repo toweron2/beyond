@@ -5,6 +5,7 @@ import (
 	"beyond/application/user/rpc/internal/server"
 	"beyond/application/user/rpc/internal/svc"
 	"beyond/application/user/rpc/service"
+	"beyond/pkg/interceptors"
 	"flag"
 	"fmt"
 
