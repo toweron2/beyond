@@ -1,6 +1,7 @@
 package xcode
 
 import (
+	"context"
 	"fmt"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
@@ -57,6 +58,7 @@ func (s *Status) Details() []any {
 	}
 	return details
 }
+
 func (s *Status) WithDetails(msgs ...proto.Message) (*Status, error) {
 	for _, msg := range msgs {
 		anyMsg, err := anypb.New(msg)
@@ -68,9 +70,14 @@ func (s *Status) WithDetails(msgs ...proto.Message) (*Status, error) {
 	return s, nil
 }
 
-func (s *Status) Proto(code Code) *Status {
+func (s *Status) Proto() *spb.Status {
+	return s.sts
+}
+
+func FromCode(code Code) *Status {
 	return &Status{sts: &spb.Status{Code: int32(code.code), Message: code.Message()}}
 }
+
 func FromProto(pbMsg proto.Message) XCode {
 	if msg, ok := pbMsg.(*spb.Status); ok {
 		if len(msg.Message) == 0 || msg.Message == strconv.FormatInt(int64(msg.Code), 10) {
@@ -103,7 +110,67 @@ func toXcode(grpcStatus *status.Status) Code {
 	}
 	return ServerErr
 }
-func FromError(error) *status.Status {
-	errors.Cause()
-	return nil
+func CodeFromError(err error) XCode {
+	err = errors.Cause(err)
+	if code, ok := err.(XCode); ok {
+		return code
+	}
+
+	switch err {
+	case context.Canceled:
+		return Canceled
+	case context.DeadlineExceeded:
+		return Deadline
+	}
+	return ServerErr
+}
+
+func FromError(err error) *status.Status {
+	err = errors.Cause(err)
+	if code, ok := err.(XCode); ok {
+		grpcStatus, e := gRpcStatusFromXcode(code)
+		if e == nil {
+			return grpcStatus
+		}
+	}
+	var grpcStatus *status.Status
+	switch err {
+	case context.Canceled:
+		grpcStatus, _ = gRpcStatusFromXcode(Canceled)
+	case context.DeadlineExceeded:
+		grpcStatus, _ = status.FromError(err)
+	}
+
+	return grpcStatus
+}
+
+func gRpcStatusFromXcode(code XCode) (*status.Status, error) {
+	var sts *Status
+	switch v := code.(type) {
+	case *Status:
+		sts = v
+	case Code:
+		sts = FromCode(v)
+	default:
+		sts = Error(Code{code.Code(), code.Message()})
+		for _, detail := range code.Details() {
+			if msg, ok := detail.(proto.Message); ok {
+				_, _ = sts.WithDetails(msg)
+			}
+		}
+	}
+
+	stas := status.New(codes.Unknown, strconv.Itoa(sts.Code()))
+	return stas.WithDetails(sts.Proto())
+}
+
+func GrpcStatusToXcode(gstatus *status.Status) XCode {
+	details := gstatus.Details()
+	for i := len(details); i >= 0; i-- {
+		detail := details[i]
+		if pb, ok := detail.(proto.Message); ok {
+			return FromProto(pb)
+		}
+	}
+	return toXcode(gstatus)
 }

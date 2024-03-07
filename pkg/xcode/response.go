@@ -1,12 +1,15 @@
 package xcode
 
-import "net/http"
+import (
+	spb "google.golang.org/genproto/googleapis/rpc/status"
+	"net/http"
+)
 
 func ErrHandler(err error) (int, any) {
-    code := CodeFromError(err)
+	code := CodeFromError(err)
 
-    return http.StatusOK, types.Status{
-        Code:    int32(code.Code),
-        Message: code.Message(),
-    }
+	return http.StatusOK, spb.Status{
+		Code:    int32(code.Code()),
+		Message: code.Message(),
+	}
 }
