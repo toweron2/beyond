@@ -20,7 +20,7 @@ type Status struct {
 }
 
 func Error(code Code) *Status {
-	return &Status{&spb.Status{Code: int32(code.Code()), Message: code.Message()}}
+	return &Status{&spb.Status{Code: code.Code(), Message: code.Message()}}
 }
 
 func Errorf(code Code, format string, args ...any) *Status {
@@ -32,8 +32,8 @@ func (s *Status) Error() string {
 	return s.sts.GetMessage()
 }
 
-func (s *Status) Code() int {
-	return int(s.sts.Code)
+func (s *Status) Code() int32 {
+	return s.sts.Code
 }
 
 func (s *Status) Message() string {
@@ -75,13 +75,13 @@ func (s *Status) Proto() *spb.Status {
 }
 
 func FromCode(code Code) *Status {
-	return &Status{sts: &spb.Status{Code: int32(code.code), Message: code.Message()}}
+	return &Status{sts: &spb.Status{Code: code.code, Message: code.Message()}}
 }
 
 func FromProto(pbMsg proto.Message) XCode {
 	if msg, ok := pbMsg.(*spb.Status); ok {
 		if len(msg.Message) == 0 || msg.Message == strconv.FormatInt(int64(msg.Code), 10) {
-			return Code{code: int(msg.Code)}
+			return Code{code: msg.Code}
 		}
 		return &Status{sts: msg}
 	}
@@ -164,7 +164,7 @@ func gRpcStatusFromXcode(code XCode) (*status.Status, error) {
 		}
 	}
 
-	stas := status.New(codes.Unknown, strconv.Itoa(sts.Code()))
+	stas := status.New(codes.Unknown, strconv.Itoa(int(sts.Code())))
 	return stas.WithDetails(sts.Proto())
 }
 

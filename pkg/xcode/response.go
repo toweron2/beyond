@@ -9,7 +9,7 @@ func ErrHandler(err error) (int, any) {
 	code := CodeFromError(err)
 
 	return http.StatusOK, spb.Status{
-		Code:    int32(code.Code()),
+		Code:    code.Code(),
 		Message: code.Message(),
 	}
 }

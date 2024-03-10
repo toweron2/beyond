@@ -4,13 +4,13 @@ import "strconv"
 
 type XCode interface {
 	Error() string
-	Code() int
+	Code() int32
 	Message() string
 	Details() []any
 }
 
 type Code struct {
-	code int
+	code int32
 	msg  string
 }
 
@@ -18,10 +18,10 @@ func (c Code) Error() string {
 	if len(c.msg) > 0 {
 		return c.msg
 	}
-	return strconv.Itoa(c.code)
+	return strconv.Itoa(int(c.code))
 }
 
-func (c Code) Code() int {
+func (c Code) Code() int32 {
 	return c.code
 }
 
@@ -41,13 +41,13 @@ func String(s string) Code {
 	if err != nil {
 		return ServerErr
 	}
-	return Code{code: code}
+	return Code{code: int32(code)}
 }
 
-func New(code int, msg string) Code {
+func New(code int32, msg string) Code {
 	return Code{code, msg}
 }
 
-func add(code int, msg string) Code {
+func add(code int32, msg string) Code {
 	return Code{code, msg}
 }
