@@ -1,7 +1,7 @@
 package jwt
 
 import (
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"time"
 )
 
@@ -47,12 +47,12 @@ func BuildTokens(opt TokenOptions) (Token, error) {
 
 func getToken(iat int64, secretKey string, payloads map[string]any, second int64) (string, error) {
 	claims := jwt.MapClaims{
-		"iat": iat,
 		"exp": iat + second,
+		"iat": iat,
 	}
 	for k, v := range payloads {
 		claims[k] = v
 	}
 
-	return jwt.NewWithClaims(jwt.SigningMethodES256, claims).SignedString([]byte(secretKey))
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secretKey))
 }

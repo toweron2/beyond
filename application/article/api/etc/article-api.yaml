@@ -1,0 +1,49 @@
+Name: article-api
+Host: 0.0.0.0
+Port: 80
+Timeout: 5000
+Auth:
+  AccessSecret: qwer1234
+  AccessExpire: 604800
+  RefreshSecret: qwer1234
+  RefreshExpire: 2592000
+  RefreshAfter: 604800
+
+
+
+Qiniu:
+  AccessKey: GJJ7yl9f29hQEg3SvPU4dfq3Z_khaDtAhWhb4QUL
+  SecretKey: Y4FMy6vV3mn65BpHU1LxBxnpvRQiXw8C8zLPjwAm
+  Bucket: toweron
+  UseHTTPS: false
+  UseCdnDomains: true
+#Osscnd: http://cdn.toweron.top
+#Profile: F:/GoCode/profile/tmp
+
+ArticleRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: article.rpc
+  NonBlock: true
+
+UserRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: user.rpc
+  NonBlock: false
+
+#Prometheus:
+#  Host: 0.0.0.0
+#  Port: 9101
+#  Path: /metrics
+
+Log:
+  ServiceName: applet-api
+  Model: console
+  Encoding: plain
+  TimeFormat: 2006-01-02 15:04:05
+  Level: debug
+  Compress: false # 压缩日志
+  Stat: false

@@ -1,0 +1,43 @@
+syntax ="proto3";
+
+package pb;
+option go_package="./pb";
+
+service Article {
+  rpc Publish(PublishReq) returns (PublishResp);
+  rpc Articles(ArticlesReq) returns (ArticlesResp);
+}
+message PublishReq {
+  int64 userId = 1;
+  string title = 2;
+  string content = 3;
+  string description = 4;
+  string cover = 5;
+}
+message PublishResp {
+  int64 articleId = 1;
+}
+
+message ArticlesReq {
+  int64 userId = 1;
+  int64 cursor = 2;
+  int64 pageSize = 3;
+  int32 sortType = 4;
+  int64 articleId = 5;
+}
+message ArticleItem {
+  int64 id = 1;
+  string title = 2;
+  string content = 3;
+  string description = 4;
+  string cover = 5;
+  int64 commentCount = 6;
+  int64 likeCount = 7;
+  int64 publishTime = 8;
+}
+message ArticlesResp {
+  repeated ArticleItem articles = 1;
+  bool isEnd = 2;
+  int64 cursor = 3;
+  int64 articleId = 4;
+}

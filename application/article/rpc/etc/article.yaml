@@ -1,0 +1,26 @@
+Name: article.rpc
+ListenOn: 0.0.0.0:9090
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379
+  Key: article.rpc
+
+DataSource: root:200212..@tcp(127.0.0.1:3306)/beyond_article?parseTime=true&loc=Local
+
+#CacheRedis: 自定义缓存和数据库索引缓存使用同一缓存数据库
+#  - Host: 127.0.0.1:6379
+#    Pass:
+#    Type: node
+BizRedis:
+  Host: 127.0.0.1:6379
+  Pass:
+  Type: node
+
+Log:
+  ServiceName: applet-api
+  Model: console
+  Encoding: plain
+  TimeFormat: 2006-01-02 15:04:05
+  Level: debug
+  Compress: false # 压缩日志
+  Stat: false

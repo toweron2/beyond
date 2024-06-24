@@ -13,7 +13,7 @@ func ClientErrorInterceptor() grpc.UnaryClientInterceptor {
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		if err != nil {
 			grpcStatus, _ := status.FromError(err)
-			xc := xcode.GrpcStatusToXcode(grpcStatus)
+			xc := xcode.GrpcStatusToXCode(grpcStatus)
 			err = errors.WithMessage(xc, grpcStatus.Message())
 		}
 		return err

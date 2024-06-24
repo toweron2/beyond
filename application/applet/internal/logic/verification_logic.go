@@ -30,7 +30,7 @@ type VerificationLogic struct {
 
 func NewVerificationLogic(ctx context.Context, svcCtx *svc.ServiceContext) *VerificationLogic {
 	return &VerificationLogic{
-		Logger: logx.WithContext(ctx),
+		Logger: logx.WithContext(ctx).WithFields(logx.LogField{Key: "api applet", Value: "verification_logic"}),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
@@ -39,7 +39,7 @@ func NewVerificationLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Veri
 func (l *VerificationLogic) Verification(req *types.VerificationRequest) (resp *types.VerificationResponse, err error) {
 	count, err := l.getVerificationCount(req.Mobile)
 	if err != nil {
-		logx.Errorf("getVerificationCount mobile: %s error: %v", req.Mobile, err)
+		l.Logger.Errorf("getVerificationCount mobile: %s error: %v", req.Mobile, err)
 	}
 	if count > verificationLimitPerDay {
 		return nil, err
@@ -48,20 +48,25 @@ func (l *VerificationLogic) Verification(req *types.VerificationRequest) (resp *
 	// 30分钟内验证码不再变化
 	code, err := getActivationCache(req.Mobile, l.svcCtx.BizRedis)
 	if err != nil {
-		logx.Errorf("getActivationCache mobile: %s error: %v", req.Mobile, err)
+		l.Logger.Errorf("getActivationCache mobile: %s error: %v", req.Mobile, err)
 	}
 	if len(code) == 0 {
 		code = util.RandomNumeric(6)
 	}
-	_, err = l.svcCtx.UserRpc.SendSms(l.ctx, &user.SendSmsRequest{
+	_, err = l.svcCtx.UserRPC.SendSms(l.ctx, &user.SendSmsRequest{
 		Mobile: req.Mobile,
 	})
 	if err != nil {
-		logx.Errorf("sendSms mobile: %s error: %v", req.Mobile, err)
+		l.Logger.Errorf("sendSms mobile: %s error: %v", req.Mobile, err)
+	}
+	err = saveActivationCache(req.Mobile, code, l.svcCtx.BizRedis)
+	if err != nil {
+		l.Logger.Errorf("saveActivationCache mobile: %s error: %v", req.Mobile, err)
+		return nil, err
 	}
 	err = l.incrVerificationCount(req.Mobile)
 	if err != nil {
-		logx.Errorf("incrVerificationCount mobile: %s error: %v", req.Mobile, err)
+		l.Logger.Errorf("incrVerificationCount mobile: %s error: %v", req.Mobile, err)
 	}
 
 	return &types.VerificationResponse{}, nil

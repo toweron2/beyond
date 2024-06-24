@@ -88,7 +88,7 @@ func FromProto(pbMsg proto.Message) XCode {
 	return Errorf(ServerErr, "invalid proto message get %v", pbMsg)
 }
 
-func toXcode(grpcStatus *status.Status) Code {
+func toXCode(grpcStatus *status.Status) Code {
 	grpcCode := grpcStatus.Code()
 	switch grpcCode {
 	case codes.OK:
@@ -168,13 +168,13 @@ func gRpcStatusFromXcode(code XCode) (*status.Status, error) {
 	return stas.WithDetails(sts.Proto())
 }
 
-func GrpcStatusToXcode(gstatus *status.Status) XCode {
+func GrpcStatusToXCode(gstatus *status.Status) XCode {
 	details := gstatus.Details()
-	for i := len(details); i >= 0; i-- {
+	for i := len(details) - 1; i >= 0; i-- {
 		detail := details[i]
 		if pb, ok := detail.(proto.Message); ok {
 			return FromProto(pb)
 		}
 	}
-	return toXcode(gstatus)
+	return toXCode(gstatus)
 }

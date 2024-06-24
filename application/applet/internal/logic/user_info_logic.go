@@ -33,11 +33,11 @@ func (l *UserInfoLogic) UserInfo() (resp *types.UserInfoResponse, err error) {
 	if userId == 0 {
 		return nil, nil
 	}
-	u, err := l.svcCtx.UserRpc.FindById(l.ctx, &user.FindByIdRequest{
+	u, err := l.svcCtx.UserRPC.FindById(l.ctx, &user.FindByIdRequest{
 		UserId: userId,
 	})
 	if err != nil {
-		logx.Errorf("FindById userId: %d error: %v", userId, err)
+		l.Logger.Errorf("FindById userId: %d error: %v", userId, err)
 		return nil, err
 	}
 	return &types.UserInfoResponse{

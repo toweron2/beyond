@@ -11,7 +11,7 @@ import (
 
 type ServiceContext struct {
 	Config   config.Config
-	UserRpc  user.User
+	UserRPC  user.User
 	BizRedis *redis.Redis
 }
 
@@ -21,12 +21,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	// userRPC := zrpc.MustNewClient(c.UserRPC, clientErrorInterceptor)
 	rds, err := redis.NewRedis(c.BizRedis)
 	if err != nil {
-		logx.Errorf("errors : %v", err)
+		logx.Errorf("redis errors : %v", err)
 		return nil
 	}
 	return &ServiceContext{
 		Config:   c,
-		UserRpc:  user.NewUser(zrpc.MustNewClient(c.UserRPC, clientErrorInterceptor)),
+		UserRPC:  user.NewUser(zrpc.MustNewClient(c.UserRPC, clientErrorInterceptor)),
 		BizRedis: rds,
 	}
 }

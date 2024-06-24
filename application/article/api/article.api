@@ -1,0 +1,29 @@
+syntax = "v1"
+
+type (
+	UploadCoverResp {
+		CoverUrl string `json:"cover_url"`
+	}
+
+	PublishReq {
+		Title       string `json:"title"`
+		Content     string `json:"content"`
+		Description string `json:"description"`
+		Cover       string `json:"cover"`
+	}
+	PublishResp {
+		ArticleId int64 `json:"articleId"`
+	}
+)
+
+@server (
+	prefix: /v1/article
+	jwt: Auth
+)
+service article-api {
+	@handler UploadCoverhandler
+	post /upload/cover returns (UploadCoverResp)
+
+	@handler PublishHandler
+	post /publish (PublishReq) returns (PublishResp)
+}
