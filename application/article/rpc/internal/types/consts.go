@@ -1,7 +1,7 @@
 package types
 
 const (
-	SortPublishTime = iota
+	SortPublishTime int32 = iota + 1
 	SortLikeCount
 )
 

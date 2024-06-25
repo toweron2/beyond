@@ -1,8 +1,13 @@
 package logic
 
 import (
+	"beyond/application/article/rpc/internal/model"
 	"beyond/application/article/rpc/internal/types"
 	"context"
+	"fmt"
+	"github.com/zeromicro/go-zero/core/mr"
+	"github.com/zeromicro/go-zero/core/threading"
+	"sort"
 	"strconv"
 	"time"
 
@@ -40,35 +45,158 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		return nil, code.SortypeInvalid
 	}
 	if in.UserId <= 0 {
-		return nil.code.UserInvalid
+		return nil, code.UserInvalid
 	}
 	if in.PageSize == 0 {
 		in.PageSize = types.DefaultPageSize
 	}
 	if in.Cursor == 0 {
-		if in.SortType == types.SortPublishTime {
+		switch in.SortType {
+		case types.SortPublishTime:
 			in.Cursor = time.Now().Unix()
-		} else {
+		case types.SortLikeCount:
 			in.Cursor = types.DefaultSortLikeCursor
 		}
 	}
 
-	sortField := "publish_time"
 	var (
+		sortField       string
 		sortLikeNum     int64
 		sortPublishTime string
 	)
-	if in.SortType == types.SortLikeCount {
+	switch in.SortType {
+	case types.SortPublishTime:
+		sortField = "publish_time"
+		sortPublishTime = time.Unix(in.Cursor, 0).Format(time.DateTime)
+	case types.SortLikeCount:
 		sortField = "like_num"
 		sortLikeNum = in.Cursor
-	} else {
-		sortPublishTime = time.Unix(in.Cursor, 0).Format(time.DateTime)
 	}
 
 	isCache, isEnd := false, false
 
 	// 调用缓存查询忽略乐error,我们期望尽最大可能的给用户返回数据,不会因为redis挂掉而返回错误
 	articleIds, _ := l.cacheArticles(l.ctx, in.UserId, in.Cursor, in.PageSize, in.SortType)
+	if len(articleIds) > 0 {
+		isCache = true
+		if articleIds[len(articleIds)-1] == -1 {
+			isEnd = true
+		}
+		articles, err := l.articleByIds(l.ctx, articleIds)
+		if err != nil {
+			return nil, err
+		}
+
+		// 通过sortFiled对artcles进行排序 go 1.21
+		/*var cmpFunc func(a, b *model.Article) int
+		if sortField == "like_num" {
+			cmpFunc = func(a, b *model.Article) int {
+				return cmp.Compare(b.LikeNum, a.LikeNum)
+			}
+		} else {
+			cmpFunc = func(a, b *model.Article) int {
+				return cmp.Compare(b.PublishTime.Unix(), a.PublishTime.Unix())
+			}
+		}*/
+		var cmpFunc func(i, j int) bool
+		if sortField == "like_num" {
+			cmpFunc = func(i, j int) bool {
+				return articles[i].LikeNum > articles[j].LikeNum
+			}
+		} else {
+			cmpFunc = func(i, j int) bool {
+				return articles[i].PublishTime.Unix() > articles[j].PublishTime.Unix()
+			}
+		}
+		sort.Slice(articles, cmpFunc)
+
+		for _, article := range articles {
+			curPage = append(curPage, &pb.ArticleItem{
+				Id:           article.Id,
+				Title:        article.Title,
+				Content:      article.Content,
+				Description:  article.Description,
+				Cover:        article.Cover,
+				CommentCount: article.CommentNum,
+				LikeCount:    article.LikeNum,
+				PublishTime:  article.PublishTime.Unix(),
+			})
+		}
+	} else {
+		v, err, _ := l.svcCtx.SingleFlightGroup.Do(fmt.Sprintf("ArticleByUserId:%d:%d", in.UserId, in.SortType))
+		if err != nil {
+			logx.Errorf("ArticlesByUserId userId: %d sortField: %s error: %v", in.UserId, sortField, err)
+			return nil, err
+		}
+		if v == nil {
+			return &pb.ArticlesResp{}, nil
+		}
+		articles := v.([]*model.Article)
+		var firstPageArticles []*model.Article
+		if len(articles) > int(in.PageSize) {
+			firstPageArticles = articles[:int(in.PageSize)]
+		} else {
+			firstPageArticles = articles
+			isEnd = true
+		}
+		for _, article := range firstPageArticles {
+			curPage = append(curPage, &pb.ArticleItem{
+				Id:      article.Id,
+				Title:   article.Title,
+				Content: article.Content,
+				// Description:  article.Description,
+				Cover:        article.Cover,
+				CommentCount: article.CommentNum,
+				LikeCount:    article.LikeNum,
+				PublishTime:  article.PublishTime.Unix(),
+			})
+		}
+	}
+	if len(curPage) > 0 {
+		pageLast := curPage[len(curPage)-1]
+		lastId = pageLast.Id
+		switch in.SortType {
+		case types.SortPublishTime:
+			cursor = pageLast.PublishTime
+		case types.SortLikeCount:
+			cursor = pageLast.LikeCount
+		}
+		if cursor < 0 {
+			cursor = 0
+		}
+		for k, article := range curPage {
+			switch in.SortType {
+			case types.SortPublishTime:
+				if article.PublishTime == in.Cursor && article.Id == in.ArticleId {
+					curPage = curPage[k:]
+				}
+			case types.SortLikeCount:
+				if article.LikeCount == in.Cursor && article.Id == in.ArticleId {
+					curPage = curPage[k:]
+
+				}
+
+			}
+		}
+	}
+	ret := &pb.ArticlesResp{
+		Articles:  curPage,
+		IsEnd:     isEnd,
+		Cursor:    cursor,
+		ArticleId: lastId,
+	}
+	if !isCache {
+		threading.GoSafe(func() {
+			if len(articles) < types.DefaultLimit && len(articles) > 0 {
+				articles = append(articles, &model.Article{Id: -1})
+			}
+			err = l.addCacheArticles(context.Background(), articles, in.UserId, in.SortType)
+			if err != nil {
+				logx.Errorf("addCacheArticles error: %v", err)
+			}
+		})
+	}
+	return ret, nil
 	if len(articleIds) == int(in.PageSize) {
 		// 为表示列表的结束,在Sorted Set中设置一个结束标识符,该标识符的member为-1,score为0
 		// 所以我们从缓存查询出数据后,需要判断数据的最后一条是否为-1,
@@ -105,6 +233,35 @@ func (l *ArticlesLogic) cacheArticles(ctx context.Context, uid, cursor, ps int64
 	}
 
 	return ids, nil
+}
+
+func (l *ArticlesLogic) articleByIds(ctx context.Context, articleIds []int64) ([]*model.Article, error) {
+	articles, err := mr.MapReduce[int64, *model.Article, []*model.Article](func(source chan<- int64) {
+		for _, aid := range articleIds {
+			if aid == -1 {
+				continue
+			}
+			source <- aid
+		}
+	}, func(id int64, writer mr.Writer[*model.Article], cancel func(error)) {
+		p, err := l.svcCtx.ArticleModel.FindOne(ctx, id)
+		if err != nil {
+			cancel(err)
+			return
+		}
+		writer.Write(p)
+	}, func(pipe <-chan *model.Article, writer mr.Writer[[]*model.Article], cancel func(error)) {
+		articles := make([]*model.Article, 0)
+		for article := range pipe {
+			articles = append(articles, article)
+		}
+		writer.Write(articles)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return articles, nil
 }
 
 func articlesKey(uid int64, sortType int32) string {
