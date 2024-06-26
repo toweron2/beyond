@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"beyond/application/article/rpc/internal/code"
 	"beyond/application/article/rpc/internal/model"
 	"beyond/application/article/rpc/internal/types"
 	"context"
@@ -46,21 +47,19 @@ Articles
 Sorted Set的score为文章的点赞数或者文章发布时间.
 */
 func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
-	if in.SortType != types.SortPublishTime && in.SortType != types.SortLikeCount {
-		return nil, code.SortypeInvalid
-	}
 	if in.UserId <= 0 {
-		return nil, code.UserInvalid
+		return nil, code.UserIdInvalid
+	}
+	if in.SortType != types.SortPublishTime && in.SortType != types.SortLikeCount {
+		return nil, code.SortTypeInvalid
 	}
 	if in.PageSize == 0 {
 		in.PageSize = types.DefaultPageSize
 	}
 	if in.Cursor == 0 {
-		switch in.SortType {
-		case types.SortPublishTime:
+		in.Cursor = types.DefaultSortLikeCursor
+		if in.SortType == types.SortPublishTime {
 			in.Cursor = time.Now().Unix()
-		case types.SortLikeCount:
-			in.Cursor = types.DefaultSortLikeCursor
 		}
 	}
 
@@ -83,11 +82,14 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 	var curPage []*pb.ArticleItem
 	var articles []*model.Article
 
-	// 调用缓存查询忽略乐error,我们期望尽最大可能的给用户返回数据,不会因为redis挂掉而返回错误
+	// 调用缓存查询忽略了error,我们期望尽最大可能的给用户返回数据,不会因为redis挂掉而返回错误
 	articleIds, _ := l.cacheArticles(l.ctx, in.UserId, in.Cursor, in.PageSize, in.SortType)
 	if len(articleIds) > 0 {
 		isCache = true
 		if articleIds[len(articleIds)-1] == -1 {
+			// 为表示列表的结束,在Sorted Set中设置一个结束标识符,该标识符的member为-1,score为0
+			// 所以我们从缓存查询出数据后,需要判断数据的最后一条是否为-1,
+			// 如果为-1的话说明列表已经加载倒最后一页了,用户在滑动屏幕的话前端就不会在请求后端接口
 			isEnd = true
 		}
 		articles, err := l.articleByIds(l.ctx, articleIds)
@@ -105,7 +107,7 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		  	cmpFunc = func(a, b *model.Article) int {
 		  		return cmp.Compare(b.PublishTime.Unix(), a.PublishTime.Unix())
 		  	}
-		  }*/
+		}*/
 		var cmpFunc func(i, j int) bool
 		if sortField == "like_num" {
 			cmpFunc = func(i, j int) bool {
@@ -200,34 +202,34 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 			if len(articles) < types.DefaultLimit && len(articles) > 0 {
 				articles = append(articles, &model.Article{Id: -1})
 			}
-			l.a
-			err = l.addCacheArticles(context.Background(), articles, in.UserId, in.SortType)
+			err := l.addCacheArticles(context.Background(), articles, in.UserId, in.SortType)
 			if err != nil {
 				logx.Errorf("addCacheArticles error: %v", err)
 			}
 		})
 	}
-	return ret, nil
-	if len(articleIds) == int(in.PageSize) {
-		// 为表示列表的结束,在Sorted Set中设置一个结束标识符,该标识符的member为-1,score为0
-		// 所以我们从缓存查询出数据后,需要判断数据的最后一条是否为-1,
-		// 如果为-1的话说明列表已经加载倒最后一页了,用户在滑动屏幕的话前端就不会在请求后端接口
-		isCache = true
-		if articleIds[len(articleIds)-1] == -1 {
-			isEnd = true
-		}
-	}
 
 	for _, id := range articleIds {
-		l.svcCtx.ArticleModel.ArticleByUserId(l.ctx, in.UserId, in.ArticleId, in.PageSize, in.SortType)
+		l.svcCtx.ArticleModel.ArticlesByUserId(l.ctx, in.UserId, in.ArticleId, in.PageSize, in.SortType)
 	}
 
-	return &pb.ArticlesResp{}, nil
+	return ret, nil
 }
 
 func (l *ArticlesLogic) cacheArticles(ctx context.Context, uid, cursor, ps int64, sortType int32) ([]int64, error) {
 	key := articlesKey(uid, sortType)
-	// 倒序从缓存中读取数据,并限制读条数为分页大小
+	b, err := l.svcCtx.BizRedis.ExistsCtx(ctx, key)
+	if err != nil {
+		logx.Errorf("ExistsCtx key: %s error: %v", key, err)
+	}
+	if b {
+		err = l.svcCtx.BizRedis.ExpireCtx(ctx, key, articlesExpire)
+		if err != nil {
+			logx.Errorf("ExpireCtx key: %s error: %v", key, err)
+		}
+	}
+
+	// 按分数倒序从缓存中读取数据,并限制读条数为分页大小
 	pairs, err := l.svcCtx.BizRedis.ZrevrangebyscoreWithScoresAndLimitCtx(ctx, key, 0, cursor, 0, int(ps))
 	if err != nil {
 		logx.Errorf("ZrevrangebyscoreWithScoresAndLimitCtx key: %s error: %v", key, err)
@@ -238,11 +240,9 @@ func (l *ArticlesLogic) cacheArticles(ctx context.Context, uid, cursor, ps int64
 		id, err := strconv.ParseInt(pair.Key, 10, 64)
 		if err != nil {
 			logx.Errorf("strconv.ParseInt key: %s error: %v", pair.Key, err)
-			return nil, err
 		}
 		ids = append(ids, id)
 	}
-
 	return ids, nil
 }
 
@@ -275,34 +275,27 @@ func (l *ArticlesLogic) articleByIds(ctx context.Context, articleIds []int64) ([
 	return articles, nil
 }
 
-func articlesKey(uid int64, sortType int32) string {
-	return fmt.Sprintf(prefixArticles, uid, sortType)
+func (l *ArticlesLogic) addCacheArticles(ctx context.Context, articles []*model.Article, uid int64, sortType int32) error {
+	if len(articles) == 0 {
+		return nil
+	}
+	key := articlesKey(uid, sortType)
+	for _, article := range articles {
+		score := article.LikeNum
+		if sortType == types.SortPublishTime {
+			score = article.PublishTime.Local().Unix()
+		}
+		if score < 0 {
+			score = 0
+		}
+		_, err := l.svcCtx.BizRedis.ZaddCtx(ctx, key, score, strconv.FormatInt(article.Id, 64))
+		if err != nil {
+			return err
+		}
+	}
+	return l.svcCtx.BizRedis.ExpireCtx(ctx, key, articlesExpire)
 }
 
-func (l *ArticlesLogic) cacheArticles(ctx context.Context, uid, cursor, ps int64, sortType int32) ([]int64, error) {
-	key := articlesKey(uid, sortType)
-	b, err := l.svcCtx.BizRedis.ExistsCtx(ctx, key)
-	if err != nil {
-		logx.Errorf("ExistsCtx key: %s error: %v", key, err)
-	}
-	if b {
-		err = l.svcCtx.BizRedis.ExpireCtx(ctx, key, articlesExpire)
-		if err != nil {
-			logx.Errorf("ExpireCtx key: %s error: %v", key, err)
-		}
-	}
-	pairs, err := l.svcCtx.BizRedis.ZrevrangebyscoreWithScoresAndLimitCtx(ctx, key, 0, cursor, 0, int(ps))
-	if err != nil {
-		logx.Errorf("ZrevrangebyscoreWithScoresAndLimitCtx key: %s error: %v", key, err)
-		return nil, err
-	}
-	ids := make([]int64, 0, len(pairs))
-	for _, pair := range pairs {
-		id, err := strconv.ParseInt(pair.Key, 10, 64)
-		if err != nil {
-			logx.Errorf("strconv.ParseInt key: %s error: %v", pair.Key, err)
-		}
-		ids = append(ids, id)
-	}
-
+func articlesKey(uid int64, sortType int32) string {
+	return fmt.Sprintf(prefixArticles, uid, sortType)
 }
