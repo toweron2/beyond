@@ -77,15 +77,12 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		sortLikeNum = in.Cursor
 	}
 
-	isCache, isEnd := false, false
-	var lastId, cursor int64
-	var curPage []*pb.ArticleItem
-	var articles []*model.Article
+	isEnd := false
+	var retArticles []*model.Article
 
 	// 调用缓存查询忽略了error,我们期望尽最大可能的给用户返回数据,不会因为redis挂掉而返回错误
 	articleIds, _ := l.cacheArticles(l.ctx, in.UserId, in.Cursor, in.PageSize, in.SortType)
 	if len(articleIds) > 0 {
-		isCache = true
 		if articleIds[len(articleIds)-1] == -1 {
 			// 为表示列表的结束,在Sorted Set中设置一个结束标识符,该标识符的member为-1,score为0
 			// 所以我们从缓存查询出数据后,需要判断数据的最后一条是否为-1,
@@ -119,19 +116,7 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 			}
 		}
 		sort.Slice(articles, cmpFunc)
-
-		for _, article := range articles {
-			curPage = append(curPage, &pb.ArticleItem{
-				Id:           article.Id,
-				Title:        article.Title,
-				Content:      article.Content,
-				Description:  article.Description,
-				Cover:        article.Cover,
-				CommentCount: article.CommentNum,
-				LikeCount:    article.LikeNum,
-				PublishTime:  article.PublishTime.Unix(),
-			})
-		}
+		retArticles = articles
 	} else {
 		v, err, _ := l.svcCtx.SingleFlightGroup.Do(fmt.Sprintf("ArticleByUserId:%d:%d", in.UserId, in.SortType), func() (interface{}, error) {
 			return l.svcCtx.ArticleModel.ArticlesByUserId(l.ctx, in.UserId, sortLikeNum, types.DefaultLimit, types.ArticleStatusVisible, sortPublishTime, sortField)
@@ -144,26 +129,40 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 			return &pb.ArticlesResp{}, nil
 		}
 		articles := v.([]*model.Article)
-		var firstPageArticles []*model.Article
 		if len(articles) > int(in.PageSize) {
-			firstPageArticles = articles[:int(in.PageSize)]
+			retArticles = articles[:int(in.PageSize)]
 		} else {
-			firstPageArticles = articles
+			retArticles = articles
 			isEnd = true
 		}
-		for _, article := range firstPageArticles {
-			curPage = append(curPage, &pb.ArticleItem{
-				Id:      article.Id,
-				Title:   article.Title,
-				Content: article.Content,
-				// Description:  article.Description,
-				Cover:        article.Cover,
-				CommentCount: article.CommentNum,
-				LikeCount:    article.LikeNum,
-				PublishTime:  article.PublishTime.Unix(),
-			})
-		}
+
+		threading.GoSafe(func() {
+			// 异步添加到缓存
+			if len(articles) > 0 && len(articles) < types.DefaultLimit {
+				articles = append(articles, &model.Article{Id: -1})
+			}
+			err = l.addCacheArticles(context.Background(), articles, in.UserId, in.SortType)
+			if err != nil {
+				logx.Errorf("addCacheArticles error: %v", err)
+			}
+		})
 	}
+
+	curPage := make([]*pb.ArticleItem, 0, len(retArticles))
+	for _, article := range retArticles {
+		curPage = append(curPage, &pb.ArticleItem{
+			Id:           article.Id,
+			Title:        article.Title,
+			Content:      article.Content,
+			Description:  article.Description, // nil
+			Cover:        article.Cover,       // nil
+			CommentCount: article.CommentNum,
+			LikeCount:    article.LikeNum,
+			PublishTime:  article.PublishTime.Unix(),
+		})
+	}
+
+	var lastId, cursor int64
 	if len(curPage) > 0 {
 		pageLast := curPage[len(curPage)-1]
 		lastId = pageLast.Id
@@ -177,43 +176,22 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 			cursor = 0
 		}
 		for k, article := range curPage {
-			switch in.SortType {
-			case types.SortPublishTime:
-				if article.PublishTime == in.Cursor && article.Id == in.ArticleId {
+			if article.Id == in.ArticleId {
+				if (in.SortType == types.SortPublishTime && article.PublishTime == in.Cursor) ||
+					(in.SortType == types.SortLikeCount && article.LikeCount == in.Cursor) {
 					curPage = curPage[k:]
+					break
 				}
-			case types.SortLikeCount:
-				if article.LikeCount == in.Cursor && article.Id == in.ArticleId {
-					curPage = curPage[k:]
-
-				}
-
 			}
 		}
 	}
-	ret := &pb.ArticlesResp{
+
+	return &pb.ArticlesResp{
 		Articles:  curPage,
 		IsEnd:     isEnd,
 		Cursor:    cursor,
 		ArticleId: lastId,
-	}
-	if !isCache {
-		threading.GoSafe(func() {
-			if len(articles) < types.DefaultLimit && len(articles) > 0 {
-				articles = append(articles, &model.Article{Id: -1})
-			}
-			err := l.addCacheArticles(context.Background(), articles, in.UserId, in.SortType)
-			if err != nil {
-				logx.Errorf("addCacheArticles error: %v", err)
-			}
-		})
-	}
-
-	for _, id := range articleIds {
-		l.svcCtx.ArticleModel.ArticlesByUserId(l.ctx, in.UserId, in.ArticleId, in.PageSize, in.SortType)
-	}
-
-	return ret, nil
+	}, nil
 }
 
 func (l *ArticlesLogic) cacheArticles(ctx context.Context, uid, cursor, ps int64, sortType int32) ([]int64, error) {
