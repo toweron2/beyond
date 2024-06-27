@@ -77,9 +77,12 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		sortLikeNum = in.Cursor
 	}
 
-	isEnd := false
-	var retArticles []*model.Article
-
+	var (
+		isEnd          bool
+		lastId, cursor int64
+		curPage        []*pb.ArticleItem
+		retArticles    []*model.Article
+	)
 	// 调用缓存查询忽略了error,我们期望尽最大可能的给用户返回数据,不会因为redis挂掉而返回错误
 	articleIds, _ := l.cacheArticles(l.ctx, in.UserId, in.Cursor, in.PageSize, in.SortType)
 	if len(articleIds) > 0 {
@@ -148,7 +151,7 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		})
 	}
 
-	curPage := make([]*pb.ArticleItem, 0, len(retArticles))
+	curPage = make([]*pb.ArticleItem, 0, len(retArticles))
 	for _, article := range retArticles {
 		curPage = append(curPage, &pb.ArticleItem{
 			Id:           article.Id,
@@ -162,7 +165,6 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		})
 	}
 
-	var lastId, cursor int64
 	if len(curPage) > 0 {
 		pageLast := curPage[len(curPage)-1]
 		lastId = pageLast.Id
