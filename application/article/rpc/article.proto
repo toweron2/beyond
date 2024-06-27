@@ -6,6 +6,7 @@ option go_package="./pb";
 service Article {
   rpc Publish(PublishReq) returns (PublishResp);
   rpc Articles(ArticlesReq) returns (ArticlesResp);
+  rpc ArticleDelete(ArticleDeleteReq) returns (E);
 }
 message PublishReq {
   int64 userId = 1;
@@ -40,4 +41,9 @@ message ArticlesResp {
   bool isEnd = 2;
   int64 cursor = 3;
   int64 articleId = 4;
+}
+
+message ArticleDeleteReq {
+  int64 userId = 1;
+  int64 articleId = 2;
 }
