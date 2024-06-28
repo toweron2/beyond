@@ -13,15 +13,18 @@ import (
 )
 
 type (
-	ArticleItem  = pb.ArticleItem
-	ArticlesReq  = pb.ArticlesReq
-	ArticlesResp = pb.ArticlesResp
-	PublishReq   = pb.PublishReq
-	PublishResp  = pb.PublishResp
+	ArticleItem      = pb.ArticleItem
+	ArticlesReq      = pb.ArticlesReq
+	ArticlesResp     = pb.ArticlesResp
+	PublishReq       = pb.PublishReq
+	PublishResp      = pb.PublishResp
+	ArticleDeleteReq = pb.ArticleDeleteReq
+	Empty            = pb.Empty
 
 	Article interface {
 		Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*PublishResp, error)
 		Articles(ctx context.Context, in *ArticlesReq, opts ...grpc.CallOption) (*ArticlesResp, error)
+		ArticleDelete(ctx context.Context, in *ArticleDeleteReq, opts ...grpc.CallOption) (*Empty, error)
 	}
 
 	defaultArticle struct {
@@ -43,4 +46,9 @@ func (m *defaultArticle) Publish(ctx context.Context, in *PublishReq, opts ...gr
 func (m *defaultArticle) Articles(ctx context.Context, in *ArticlesReq, opts ...grpc.CallOption) (*ArticlesResp, error) {
 	client := pb.NewArticleClient(m.cli.Conn())
 	return client.Articles(ctx, in, opts...)
+}
+
+func (m *defaultArticle) ArticleDelete(ctx context.Context, in *ArticleDeleteReq, opts ...grpc.CallOption) (*Empty, error) {
+	client := pb.NewArticleClient(m.cli.Conn())
+	return client.ArticleDelete(ctx, in, opts...)
 }

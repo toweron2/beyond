@@ -65,13 +65,13 @@ func (l *PublishLogic) Publish(in *pb.PublishReq) (*pb.PublishResp, error) {
 		publishTimeKey = articlesKey(in.UserId, types.SortPublishTime)
 		likeNumKey     = articlesKey(in.UserId, types.SortLikeCount)
 	)
-	l.funcName(articleIdStr, publishTimeKey, time.Now().Unix())
-	l.funcName(articleIdStr, likeNumKey, 0)
+	l.addCacheArticleToScore(articleIdStr, publishTimeKey, time.Now().Unix())
+	l.addCacheArticleToScore(articleIdStr, likeNumKey, 0)
 
 	return &pb.PublishResp{ArticleId: articleId}, nil
 }
 
-func (l *PublishLogic) funcName(articleIdStr, key string, score int64) {
+func (l *PublishLogic) addCacheArticleToScore(articleIdStr, key string, score int64) {
 	b, _ := l.svcCtx.BizRedis.ExistsCtx(l.ctx, key)
 	if b {
 		_, err := l.svcCtx.BizRedis.ZaddCtx(l.ctx, key, score, articleIdStr)

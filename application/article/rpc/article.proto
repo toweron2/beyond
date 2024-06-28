@@ -1,12 +1,14 @@
 syntax ="proto3";
 
 package pb;
+import public "google/protobuf/empty.proto";
 option go_package="./pb";
 
 service Article {
   rpc Publish(PublishReq) returns (PublishResp);
   rpc Articles(ArticlesReq) returns (ArticlesResp);
-  rpc ArticleDelete(ArticleDeleteReq) returns (E);
+  rpc ArticleDelete(ArticleDeleteReq) returns (google.protobuf.Empty);
+//  rpc ArticleDetail(ArticleDetailReq) returns (ArticleDetailResp);
 }
 message PublishReq {
   int64 userId = 1;

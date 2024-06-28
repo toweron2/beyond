@@ -31,3 +31,8 @@ func (s *ArticleServer) Articles(ctx context.Context, in *pb.ArticlesReq) (*pb.A
 	l := logic.NewArticlesLogic(ctx, s.svcCtx)
 	return l.Articles(in)
 }
+
+func (s *ArticleServer) ArticleDelete(ctx context.Context, in *pb.ArticleDeleteReq) (*pb.Empty, error) {
+	l := logic.NewArticleDeleteLogic(ctx, s.svcCtx)
+	return l.ArticleDelete(in)
+}
