@@ -72,6 +72,11 @@ func (l *PublishLogic) Publish(in *pb.PublishReq) (*pb.PublishResp, error) {
 }
 
 func (l *PublishLogic) addCacheArticleToScore(articleIdStr, key string, score int64) {
+	// 需要判断是否存在缓存
+	/*
+		不判断是用户是否存在文章缓存, 没没有缓存的的e情况下,只将最新发布的添加倒缓存中了
+		当下次进行查询的时候,缓存存在,但是内容只有上一次新发布的,导致查出来数据不一致
+	*/
 	b, _ := l.svcCtx.BizRedis.ExistsCtx(l.ctx, key)
 	if b {
 		_, err := l.svcCtx.BizRedis.ZaddCtx(l.ctx, key, score, articleIdStr)

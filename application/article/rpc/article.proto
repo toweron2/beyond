@@ -1,8 +1,8 @@
-syntax ="proto3";
+syntax = "proto3";
 
 package pb;
 import public "google/protobuf/empty.proto";
-option go_package="./pb";
+option go_package = "./pb";
 
 service Article {
   rpc Publish(PublishReq) returns (PublishResp);
@@ -41,9 +41,9 @@ message ArticleItem {
 }
 message ArticlesResp {
   repeated ArticleItem articles = 1;
-  bool isEnd = 2;
-  int64 cursor = 3;
-  int64 articleId = 4;
+  bool isEnd = 2; // 是否结束
+  int64 cursor = 3; // 按点赞排序,cursor是当前页面最后一条数据的点赞数
+  int64 articleId = 4; // 文章id ,cursor相同去重
 }
 
 message ArticleDeleteReq {
