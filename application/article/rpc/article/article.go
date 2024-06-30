@@ -13,18 +13,21 @@ import (
 )
 
 type (
-	ArticleItem      = pb.ArticleItem
-	ArticlesReq      = pb.ArticlesReq
-	ArticlesResp     = pb.ArticlesResp
-	PublishReq       = pb.PublishReq
-	PublishResp      = pb.PublishResp
-	ArticleDeleteReq = pb.ArticleDeleteReq
-	Empty            = pb.Empty
+	ArticleDeleteReq  = pb.ArticleDeleteReq
+	ArticleDetailReq  = pb.ArticleDetailReq
+	ArticleDetailResp = pb.ArticleDetailResp
+	ArticleItem       = pb.ArticleItem
+	ArticlesReq       = pb.ArticlesReq
+	ArticlesResp      = pb.ArticlesResp
+	Empty             = pb.Empty
+	PublishReq        = pb.PublishReq
+	PublishResp       = pb.PublishResp
 
 	Article interface {
 		Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*PublishResp, error)
 		Articles(ctx context.Context, in *ArticlesReq, opts ...grpc.CallOption) (*ArticlesResp, error)
 		ArticleDelete(ctx context.Context, in *ArticleDeleteReq, opts ...grpc.CallOption) (*Empty, error)
+		ArticleDetail(ctx context.Context, in *ArticleDetailReq, opts ...grpc.CallOption) (*ArticleDetailResp, error)
 	}
 
 	defaultArticle struct {
@@ -51,4 +54,10 @@ func (m *defaultArticle) Articles(ctx context.Context, in *ArticlesReq, opts ...
 func (m *defaultArticle) ArticleDelete(ctx context.Context, in *ArticleDeleteReq, opts ...grpc.CallOption) (*Empty, error) {
 	client := pb.NewArticleClient(m.cli.Conn())
 	return client.ArticleDelete(ctx, in, opts...)
+}
+
+// rpc ArticleDelete(ArticleDeleteReq) returns (google.protobuf.Empty);
+func (m *defaultArticle) ArticleDetail(ctx context.Context, in *ArticleDetailReq, opts ...grpc.CallOption) (*ArticleDetailResp, error) {
+	client := pb.NewArticleClient(m.cli.Conn())
+	return client.ArticleDetail(ctx, in, opts...)
 }
