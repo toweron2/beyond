@@ -44,7 +44,7 @@ func (l *PublishLogic) Publish(in *pb.PublishReq) (*pb.PublishResp, error) {
 		Content:     in.Content,
 		Description: in.Description,
 		Cover:       in.Cover,
-		Status:      int64(types.ArticleStatusVisible), // 正常逻辑不会这样写，这里为了演示方便
+		Status:      int64(model.ArticleStatusVisible), // 正常逻辑不会这样写，这里为了演示方便
 		PublishTime: time.Now(),
 		CreateTime:  time.Now(),
 		UpdateTime:  time.Now(),

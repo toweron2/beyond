@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"beyond/application/article/model"
 	"beyond/application/article/mq/article/internal/svc"
 	"beyond/application/article/mq/article/internal/types"
 	"beyond/application/user/rpc/user"
@@ -54,7 +55,7 @@ func (l *ArticleLogic) articleOperate(msg *types.CanalArticleMsg) error {
 		likeNumKey := articlesKey(d.AuthorId, 1)
 
 		switch int32(status) {
-		case types.ArticleStatusVisible:
+		case model.ArticleStatusVisible:
 			b, _ := l.svcCtx.BizRedis.ExistsCtx(l.ctx, publishTimeKey)
 			if b {
 				_, err = l.svcCtx.BizRedis.ZaddCtx(l.ctx, publishTimeKey, t.Unix(), d.ID)
@@ -69,7 +70,7 @@ func (l *ArticleLogic) articleOperate(msg *types.CanalArticleMsg) error {
 					l.Logger.Errorf("ZaddCtx key: %s req: %v error: %v", likeNum, d, err)
 				}
 			}
-		case types.ArticleStatusUserDelete:
+		case model.ArticleStatusUserDelete:
 			_, err = l.svcCtx.BizRedis.ZremCtx(l.ctx, publishTimeKey, d.ID)
 			if err != nil {
 				l.Logger.Errorf("ZremCtx key: %s req: %v error: %v", publishTimeKey, d, err)
@@ -78,8 +79,8 @@ func (l *ArticleLogic) articleOperate(msg *types.CanalArticleMsg) error {
 			if err != nil {
 				l.Logger.Errorf("ZremCtx key: %s req: %v error: %v", likeNumKey, d, err)
 			}
-		case types.ArticleStatusPending:
-		case types.ArticleStatusNotPass:
+			// case types.ArticleStatusPending:
+			// case types.ArticleStatusNotPass:
 		}
 
 		u, err := l.svcCtx.UserRpc.FindById(l.ctx, &user.FindByIdRequest{

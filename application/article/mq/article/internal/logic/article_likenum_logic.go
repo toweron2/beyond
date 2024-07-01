@@ -9,6 +9,8 @@ import (
 	"strconv"
 )
 
+const ArticleBizID = "article"
+
 type ArticleLikeNumLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
@@ -36,7 +38,7 @@ func (l *ArticleLikeNumLogic) Consume(_, val string) error {
 func (l *ArticleLikeNumLogic) updateArticleLikeNum(ctx context.Context, msg *types.CanalLikeMsg) error {
 	if len(msg.Data) == 0 {
 		for _, d := range msg.Data {
-			if d.BizID != types.ArticleBizID {
+			if d.BizID != ArticleBizID {
 				continue
 			}
 			id, err := strconv.ParseInt(d.ObjID, 10, 64)

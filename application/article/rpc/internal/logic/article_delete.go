@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"beyond/application/article/model"
 	"beyond/application/article/rpc/internal/code"
 	"beyond/application/article/rpc/internal/svc"
 	"beyond/application/article/rpc/internal/types"
@@ -38,7 +39,7 @@ func (l *ArticleDeleteLogic) ArticleDelete(in *pb.ArticleDeleteReq) (*pb.Empty, 
 	if article.AuthorId != in.UserId {
 		return nil, xcode.AccessDenied
 	}
-	err = l.svcCtx.ArticleModel.UpdateArticleStatus(l.ctx, in.ArticleId, types.ArticleStatusUserDelete)
+	err = l.svcCtx.ArticleModel.UpdateArticleStatus(l.ctx, in.ArticleId, model.ArticleStatusUserDelete)
 	if err != nil {
 		l.Logger.Errorf("UpdateArticleStatus req: %v, error: %v", in, err)
 		return nil, err

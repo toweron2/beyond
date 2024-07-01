@@ -122,7 +122,7 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		retArticles = articles
 	} else {
 		v, err, _ := l.svcCtx.SingleFlightGroup.Do(fmt.Sprintf("ArticleByUserId:%d:%d", in.UserId, in.SortType), func() (interface{}, error) {
-			return l.svcCtx.ArticleModel.ArticlesByUserId(l.ctx, in.UserId, sortLikeNum, types.DefaultLimit, types.ArticleStatusVisible, sortPublishTime, sortField)
+			return l.svcCtx.ArticleModel.ArticlesByUserId(l.ctx, in.UserId, sortLikeNum, types.DefaultLimit, model.ArticleStatusVisible, sortPublishTime, sortField)
 		})
 		if err != nil {
 			logx.Errorf("ArticlesByUserId userId: %d sortField: %s error: %v", in.UserId, sortField, err)
