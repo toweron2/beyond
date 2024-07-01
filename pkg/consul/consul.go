@@ -3,7 +3,9 @@ package consul
 import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/netx"
+	"github.com/zeromicro/go-zero/core/proc"
 	"net"
 	"os"
 	"strconv"
@@ -37,7 +39,7 @@ func Register(conf Conf, listenOn string) error {
 	if err != nil {
 		return err
 	}
-	client, err := api.NewClient(&api.Config{
+	cli, err := api.NewClient(&api.Config{
 		Scheme:  "http",
 		Address: conf.Host,
 	})
@@ -51,30 +53,71 @@ func Register(conf Conf, listenOn string) error {
 	ttl := fmt.Sprintf("%ds", conf.TTL)
 	expireTTL := fmt.Sprintf("%ds", conf.TTL*3)
 	id := genID(conf.Key, host, port)
-	&api.AgentServiceRegistration{
+	asg := &api.AgentServiceRegistration{
+		ID:      id,
+		Name:    conf.Key,
+		Tags:    conf.Tags,
+		Port:    port,
+		Address: host,
+		Checks: api.AgentServiceChecks{
+			&api.AgentServiceCheck{
+				CheckID:                        id,
+				TTL:                            ttl,
+				Status:                         "passing",
+				DeregisterCriticalServiceAfter: expireTTL,
+			},
+		},
+	}
+	err = cli.Agent().ServiceRegister(asg)
+	if err != nil {
+		return err
+	}
+
+	check := api.AgentServiceCheck{
+		TTL:                            ttl,
+		Status:                         "passing",
+		DeregisterCriticalServiceAfter: expireTTL,
+	}
+	err = cli.Agent().CheckRegister(&api.AgentCheckRegistration{
 		ID:                id,
 		Name:              conf.Key,
-		Tags:              nil,
-		Port:              0,
-		Address:           "",
-		SocketPath:        "",
-		TaggedAddresses:   nil,
-		EnableTagOverride: false,
-		Meta:              nil,
-		Weights:           nil,
-		Check:             nil,
-		Checks:            nil,
-		Proxy:             nil,
-		Connect:           nil,
-		Namespace:         "",
-		Partition:         "",
-		Locality:          nil,
+		ServiceID:         id,
+		AgentServiceCheck: check,
+	})
+	if err != nil {
+		return err
 	}
+
+	ttlTicker := time.Duration(conf.TTL-1) * time.Second
+	if ttlTicker < time.Second {
+		ttlTicker = defaultTicker
+	}
+
+	go func() {
+		ticker := time.NewTicker(ttlTicker)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			err = cli.Agent().UpdateTTL(id, "", "passing")
+			if err != nil {
+				logx.Error("UpdateTTL id: %s error: %v", id, err)
+			}
+		}
+	}()
+
+	proc.AddShutdownListener(func() {
+		err = cli.Agent().ServiceDeregister(asg.ID)
+		if err != nil {
+			logx.Errorf("ServiceDeregister id: %s error: %v", asg.ID, err)
+		}
+		logx.Infof("ServiceDeregister id: %s success", asg.ID)
+	})
+
 	return nil
 }
 
-func genID(key, host string, port int) interface{} {
-	return fmt.Sprintf("%s-%d-%d", key, host, port)
+func genID(key, host string, port int) string {
+	return fmt.Sprintf("%s-%s-%d", key, host, port)
 }
 
 func figureOutListenOn(listenOn string) string {
