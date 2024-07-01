@@ -81,7 +81,7 @@ func (l *PublishLogic) addCacheArticleToScore(articleIdStr, key string, score in
 	if b {
 		_, err := l.svcCtx.BizRedis.ZaddCtx(l.ctx, key, score, articleIdStr)
 		if err != nil {
-			logx.Errorf("ZaddCtx key: %s error: %v", key, err)
+			l.Logger.Errorf("ZaddCtx key: %s error: %v", key, err)
 		}
 	}
 }

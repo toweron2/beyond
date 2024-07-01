@@ -39,6 +39,8 @@ func (l *ArticleLogic) Consume(_, val string) error {
 	}
 	return l.articleOperate(msg)
 }
+
+// 消费文章变更数据核心逻辑(异步处理,对缓存进行补偿)
 func (l *ArticleLogic) articleOperate(msg *types.CanalArticleMsg) error {
 	if len(msg.Data) == 0 {
 		return nil
@@ -50,26 +52,14 @@ func (l *ArticleLogic) articleOperate(msg *types.CanalArticleMsg) error {
 		articleId, _ := strconv.ParseInt(d.ID, 10, 64)
 		authorId, _ := strconv.ParseInt(d.AuthorId, 10, 64)
 
-		t, err := time.ParseInLocation("2006-01-02 15:04:05", d.PublishTime, time.Local)
+		t, err := time.ParseInLocation(time.DateTime, d.PublishTime, time.Local)
 		publishTimeKey := articlesKey(d.AuthorId, 0)
 		likeNumKey := articlesKey(d.AuthorId, 1)
 
 		switch int32(status) {
 		case model.ArticleStatusVisible:
-			b, _ := l.svcCtx.BizRedis.ExistsCtx(l.ctx, publishTimeKey)
-			if b {
-				_, err = l.svcCtx.BizRedis.ZaddCtx(l.ctx, publishTimeKey, t.Unix(), d.ID)
-				if err != nil {
-					l.Logger.Errorf("ZaddCtx key: %s req: %v error: %v", publishTimeKey, d, err)
-				}
-			}
-			b, _ = l.svcCtx.BizRedis.ExistsCtx(l.ctx, likeNumKey)
-			if b {
-				_, err = l.svcCtx.BizRedis.ZaddCtx(l.ctx, likeNumKey, likeNum, d.ID)
-				if err != nil {
-					l.Logger.Errorf("ZaddCtx key: %s req: %v error: %v", likeNum, d, err)
-				}
-			}
+			l.addCacheArticleToScore(publishTimeKey, d.ID, t.Unix())
+			l.addCacheArticleToScore(likeNumKey, d.ID, likeNum)
 		case model.ArticleStatusUserDelete:
 			_, err = l.svcCtx.BizRedis.ZremCtx(l.ctx, publishTimeKey, d.ID)
 			if err != nil {
@@ -140,6 +130,16 @@ func (l *ArticleLogic) BatchUpSertToEs(ctx context.Context, data []*types.Articl
 		}
 	}
 	return bi.Close(ctx)
+}
+
+func (l *ArticleLogic) addCacheArticleToScore(articleIdStr, key string, score int64) {
+	b, _ := l.svcCtx.BizRedis.ExistsCtx(l.ctx, key)
+	if b {
+		_, err := l.svcCtx.BizRedis.ZaddCtx(l.ctx, key, score, articleIdStr)
+		if err != nil {
+			l.Logger.Errorf("ZaddCtx key: %s error: %v", key, err)
+		}
+	}
 }
 
 func articlesKey(uid string, sortType int32) string {

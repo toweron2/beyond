@@ -26,6 +26,9 @@ func NewArticleDetailLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Art
 }
 
 func (l *ArticleDetailLogic) ArticleDetail(in *pb.ArticleDetailReq) (*pb.ArticleDetailResp, error) {
+	// go-zero框架默认会给不存在的加上空缓存
+	// get cache:beyondArticle:article:id:999
+	// "*"
 	article, err := l.svcCtx.ArticleModel.FindOne(l.ctx, in.ArticleId)
 	if err != nil {
 		if errors.Is(err, sqlx.ErrNotFound) {

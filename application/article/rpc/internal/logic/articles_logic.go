@@ -121,6 +121,7 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		sort.Slice(articles, cmpFunc)
 		retArticles = articles
 	} else {
+		// 当多个相同请求过来时 最终只有一个方法能执行到, 在统一返回结果
 		v, err, _ := l.svcCtx.SingleFlightGroup.Do(fmt.Sprintf("ArticleByUserId:%d:%d", in.UserId, in.SortType), func() (interface{}, error) {
 			return l.svcCtx.ArticleModel.ArticlesByUserId(l.ctx, in.UserId, sortLikeNum, types.DefaultLimit, model.ArticleStatusVisible, sortPublishTime, sortField)
 		})
@@ -197,13 +198,14 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 	}, nil
 }
 
+// 缓存击穿经常发生在热点数据过期失效的时候, 每次查询缓存的时候使用Exists来判断key是否存在,如果存在就是用Expire给缓存续期
 func (l *ArticlesLogic) cacheArticles(ctx context.Context, uid, cursor, ps int64, sortType int32) ([]int64, error) {
 	key := articlesKey(uid, sortType)
 	b, err := l.svcCtx.BizRedis.ExistsCtx(ctx, key)
 	if err != nil {
 		logx.Errorf("ExistsCtx key: %s error: %v", key, err)
 	}
-	if b {
+	if b { // 进行了查询, 热点数据续期
 		err = l.svcCtx.BizRedis.ExpireCtx(ctx, key, articlesExpire)
 		if err != nil {
 			logx.Errorf("ExpireCtx key: %s error: %v", key, err)
