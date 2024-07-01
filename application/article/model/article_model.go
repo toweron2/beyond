@@ -18,6 +18,7 @@ type (
 		articleModel
 		ArticlesByUserId(ctx context.Context, uid, likeNum, limit int64, status int32, pubTime, sortField string) ([]*Article, error)
 		UpdateArticleStatus(ctx context.Context, id int64, status int32) error
+		UpdateLikeNum(ctx context.Context, id, likeNum int64) error
 	}
 
 	customArticleModel struct {
@@ -65,5 +66,11 @@ func (c *customArticleModel) UpdateArticleStatus(ctx context.Context, id int64, 
 		query := fmt.Sprintf("update %s set status = ? where `id` = ?", c.table)
 		return conn.ExecCtx(ctx, query, status, id)
 	}, beyondArticleArticleIdKey)
+	return err
+}
+
+func (c *customArticleModel) UpdateLikeNum(ctx context.Context, id, likeNum int64) error {
+	query := fmt.Sprintf("update %s set like_num = ? where `id` = ?", c.table)
+	_, err := c.ExecNoCacheCtx(ctx, query, likeNum, id)
 	return err
 }

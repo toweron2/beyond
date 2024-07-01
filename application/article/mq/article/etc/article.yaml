@@ -1,6 +1,52 @@
-Name: article.rpc
-ListenOn: 0.0.0.0:8080
-Etcd:
-  Hosts:
-  - 127.0.0.1:2379
-  Key: article.rpc
+Name: article.mq
+Log:
+  ServiceName: applet-api
+  Model: console
+  Encoding: plain
+  TimeFormat: 2006-01-02 15:04:05
+  Level: debug
+  Compress: false # 压缩日志
+  Stat: false
+
+KqConsumerConf:
+  Name: article-kq-consumer
+  Brokers:
+    - 127.0.0.1:9092
+  Group: group-like-count
+  Topic: topic-like-count
+  Offset: last
+  Consumers: 1
+  Prcessors: 1
+
+ArticleKqConsumerConf:
+  Name: article-cache-kq-consumer
+  Brokers:
+    -127.0.0.1:9092
+  Group: group-article-event
+  Topic: topic-article-event
+  Offset: last
+  Consumers: 1
+  Processors: 1
+
+DataSource: root:Zsg123456@tcp(127.0.0.1:3306)/beyond_article?parseTime=true
+BizRedis:
+  Host: 127.0.0.1:6379
+  Pass:
+  Type: node
+Es:
+  Addresses:
+    - http://localhost:9200
+  Username: elastic
+  Password: password
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9101
+  Path: /metrics
+Telemetry:
+  Endpoint: http://127.0.0.1/api/traces
+UserRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: user.rpc
+  NonBlock: true

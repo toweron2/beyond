@@ -1,8 +1,8 @@
 package svc
 
 import (
+	"beyond/application/article/model"
 	"beyond/application/article/rpc/internal/config"
-	"beyond/application/article/rpc/internal/model"
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
