@@ -36,3 +36,9 @@ func (s *ArticleServer) ArticleDelete(ctx context.Context, in *pb.ArticleDeleteR
 	l := logic.NewArticleDeleteLogic(ctx, s.svcCtx)
 	return l.ArticleDelete(in)
 }
+
+// rpc ArticleDelete(ArticleDeleteReq) returns (google.protobuf.Empty);
+func (s *ArticleServer) ArticleDetail(ctx context.Context, in *pb.ArticleDetailReq) (*pb.ArticleDetailResp, error) {
+	l := logic.NewArticleDetailLogic(ctx, s.svcCtx)
+	return l.ArticleDetail(in)
+}

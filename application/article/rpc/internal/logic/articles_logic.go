@@ -177,6 +177,7 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		if cursor < 0 {
 			cursor = 0
 		}
+		// 去重
 		for k, article := range curPage {
 			if article.Id == in.ArticleId {
 				if (in.SortType == types.SortPublishTime && article.PublishTime == in.Cursor) ||
