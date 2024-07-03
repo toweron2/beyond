@@ -1,7 +1,6 @@
 package orm
 
 import (
-	"fmt"
 	"github.com/zeromicro/go-zero/core/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -48,10 +47,7 @@ func (p *CustomePlugin) Initialize(db *gorm.DB) error {
 
 	if err := db.Callback().Query().Before("gorm:queryBefore").Register("gorm:queryBefore:metric:trace", func(db *gorm.DB) {
 		startTime := time.Now().Unix()
-		i, _ := db.InstanceGet("key")
-
-		fmt.Println("i:", i)
-		db.InstanceSet(queryStartTimeKey+string((i).(int)), startTime)
+		db.InstanceSet(queryStartTimeKey, startTime)
 
 		ctx := db.Statement.Context
 		tracer := trace.TracerFromContext(ctx)
@@ -141,9 +137,6 @@ func (p *CustomePlugin) Initialize(db *gorm.DB) error {
 		if !ok {
 			return
 		}
-
-		i, _ := db.InstanceGet("key")
-		fmt.Println("end i:", i)
 		stSecond := startTime.(int64)
 		st := time.Unix(stSecond, 0)
 		metricClientReqDur.Observe(time.Since(st).Milliseconds(), db.Statement.Table, "query")

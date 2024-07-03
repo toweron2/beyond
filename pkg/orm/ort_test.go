@@ -1,8 +1,10 @@
 package orm
 
 import (
+	"context"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestGorm(t *testing.T) {
@@ -18,7 +20,10 @@ func TestGorm(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go func() {
+			time.Sleep(time.Millisecond * time.Duration(i) * 10)
 			// 执行 SQL 查询，获取所有表名
+			db.Statement.WithContext(context.Background())
+			// db.WithContext(context.Background())
 			db.InstanceSet("key", i)
 			rows, err := db.Raw("SHOW TABLES").Rows()
 			if err != nil {
@@ -28,12 +33,12 @@ func TestGorm(t *testing.T) {
 
 			var tableName string
 			for rows.Next() {
-				if err := rows.Scan(&tableName); err != nil {
+				if err = rows.Scan(&tableName); err != nil {
 					t.Fatalf("failed to scan row: %v", err)
 				}
 				// fmt.Println(tableName)
 			}
-			if err := rows.Err(); err != nil {
+			if err = rows.Err(); err != nil {
 				t.Fatalf("error during iteration: %v", err)
 			}
 			wg.Done()
