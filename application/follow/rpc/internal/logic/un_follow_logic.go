@@ -19,12 +19,14 @@ func NewUnFollowLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UnFollow
 	return &UnFollowLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
+		Logger: logx.WithContext(ctx).WithFields(logx.LogField{Key: "rpc follow", Value: "un_follow_logic"}),
 	}
 }
 
 func (l *UnFollowLogic) UnFollow(in *pb.UnFollowReq) (*pb.Empty, error) {
 	// todo: add your logic here and delete this line
-
+	if in.UserId <= 0 {
+		// return n
+	}
 	return &pb.Empty{}, nil
 }
