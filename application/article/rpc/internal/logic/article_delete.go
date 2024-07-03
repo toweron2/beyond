@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"beyond/application/article/model"
+	"beyond/application/article/internal/model"
 	"beyond/application/article/rpc/internal/code"
 	"beyond/application/article/rpc/internal/svc"
 	"beyond/application/article/rpc/internal/types"

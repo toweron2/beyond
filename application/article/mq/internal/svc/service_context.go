@@ -1,9 +1,10 @@
 package svc
 
 import (
-	"beyond/application/article/model"
-	"beyond/application/article/mq/article/internal/config"
-	"beyond/application/article/mq/article/internal/logic"
+	"beyond/application/article/internal/model"
+	"beyond/application/article/mq/internal/config"
+	logic2 "beyond/application/article/mq/internal/logic"
+
 	"beyond/application/user/rpc/user"
 	"beyond/pkg/es"
 	"context"
@@ -43,7 +44,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 func Consumers(ctx context.Context, svcCtx *ServiceContext) []service.Service {
 	return []service.Service{
-		kq.MustNewQueue(svcCtx.Config.KqConsumerConf, logic.NewArticleLikeNumLogic(ctx, svcCtx)),
-		kq.MustNewQueue(svcCtx.Config.ArticleKqConsumerConf, logic.NewArticleLogic(ctx, svcCtx)),
+		kq.MustNewQueue(svcCtx.Config.KqConsumerConf, logic2.NewArticleLikeNumLogic(ctx, svcCtx)),
+		kq.MustNewQueue(svcCtx.Config.ArticleKqConsumerConf, logic2.NewArticleLogic(ctx, svcCtx)),
 	}
 }

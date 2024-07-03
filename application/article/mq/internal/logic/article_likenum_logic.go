@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"beyond/application/article/mq/article/internal/svc"
-	"beyond/application/article/mq/article/internal/types"
+	"beyond/application/article/mq/internal/svc"
+	"beyond/application/article/mq/internal/types"
 	"context"
 	"encoding/json"
 	"github.com/zeromicro/go-zero/core/logx"

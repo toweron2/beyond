@@ -1,9 +1,9 @@
 package logic
 
 import (
-	"beyond/application/article/model"
-	"beyond/application/article/mq/article/internal/svc"
-	"beyond/application/article/mq/article/internal/types"
+	"beyond/application/article/internal/model"
+	"beyond/application/article/mq/internal/svc"
+	"beyond/application/article/mq/internal/types"
 	"beyond/application/user/rpc/user"
 	"context"
 	"encoding/json"

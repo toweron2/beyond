@@ -1,12 +1,11 @@
 package main
 
 import (
+	"beyond/application/article/mq/internal/config"
+	"beyond/application/article/mq/internal/svc"
 	"context"
 	"flag"
 	"fmt"
-
-	"beyond/application/article/mq/article/internal/config"
-	"beyond/application/article/mq/article/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
