@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package service;
+import public "google/protobuf/empty.proto";
+option go_package = "./pb";
+
+service Follow {
+  rpc Follow (FollowReq) returns (google.protobuf.Empty); // 关注
+  rpc UnFollow (UnFollowReq) returns (google.protobuf.Empty); // 取消关注
+  rpc FollowList (FollowListReq) returns (FollowListResp); // 关注列表
+  rpc FansList (FansListReq) returns (FansListResp); // 粉丝列表
+}
+
+message FollowReq {
+  int64 userId = 1; // 关注着
+  int64 followedUserId = 2; // 被关注者
+}
+
+message UnFollowReq {
+  int64 userId = 1;
+  int64 followedUserId = 2;
+}
+
+message FollowListReq {
+  int64 Id = 1;
+  int64 userId = 2;
+  int64 cursor = 3;
+  int64 pageSize = 4;
+}
+message FollowItem {
+  int64 Id = 1;
+  int64 followedUserId = 2; // 被关注者
+  int64 fansCount = 3; // 粉丝数
+  int64 createTime = 4; // 关注时间
+}
+message FollowListResp {
+  repeated FollowItem items = 1;
+  int64 cursor = 2;
+  bool isEnd = 3;
+  int64 Id = 4;
+}
+
+message FansListReq {
+  int64 userId = 1;
+  int64 cursor = 2;
+  int64 pageSize = 3;
+}
+message FansItem {
+  int64 userId = 1;
+  int64 fansUserId = 2;
+  int64 createTime = 3;
+}
+message FansListResp {
+  repeated FansItem items = 1;
+  int64 cursor = 2;
+}

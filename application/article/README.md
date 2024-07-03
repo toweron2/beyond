@@ -12,10 +12,10 @@ goctl rpc protoc ./article.proto --go_out=. --go-grpc_out=. --zrpc_out=./ --styl
 ```
 
 ```shell
-cd beyond/application/article/rpc
+cd beyond/application/article
 
-goctl model mysql datasource --dir ./internal/model -t "article" --url "root:200212..@tcp(127.0.0.1:3306)/beyond_article" --style go_zero
-goctl model mysql datasource --dir ./internal/model -t "*" --url "root:200212..@tcp(127.0.0.1:3306)/beyond_article" -c true --style go_zero 
+goctl model mysql datasource --dir ./model -t "article" --url "root:200212..@tcp(127.0.0.1:3306)/beyond_article" --style go_zero
+goctl model mysql datasource --dir ./model -t "*" --url "root:200212..@tcp(127.0.0.1:3306)/beyond_article" -c true --style go_zero 
 ```
 
 ```shell
