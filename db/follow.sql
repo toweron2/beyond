@@ -1,4 +1,4 @@
-create database beyond_follow  character set utf8mb4 collate utf8mb4_general_ci;
+create database beyond_follow character set utf8mb4 collate utf8mb4_general_ci;
 use beyond_follow;
 
 CREATE TABLE `follow` (
