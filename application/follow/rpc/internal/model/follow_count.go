@@ -9,8 +9,8 @@ import (
 type FollowCount struct {
 	ID          int64 `gorm:"primary_key"`
 	UserID      int64
-	FollowCount int32
-	FansCount   int32
+	FollowCount int64
+	FansCount   int64
 	CreateTime  time.Time
 	UpdateTime  time.Time
 }
