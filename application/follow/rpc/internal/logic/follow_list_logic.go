@@ -44,7 +44,7 @@ func (l *FollowListLogic) FollowList(in *pb.FollowListReq) (*pb.FollowListResp, 
 
 	var (
 		err             error
-		isCache, isEnd  bool
+		isEnd           bool
 		lastId, cursor  int64
 		followedUserIds []int64
 		follows         []*model.Follow
@@ -53,7 +53,6 @@ func (l *FollowListLogic) FollowList(in *pb.FollowListReq) (*pb.FollowListResp, 
 
 	followUserIds, _ := l.cacheFollowUserIds(l.ctx, in.UserId, in.Cursor, in.PageSize)
 	if len(followUserIds) > 0 {
-		isCache = true
 		if followUserIds[len(followUserIds)-1] == -1 {
 			followUserIds = followUserIds[:len(followUserIds)-1]
 			isEnd = true
@@ -98,6 +97,17 @@ func (l *FollowListLogic) FollowList(in *pb.FollowListReq) (*pb.FollowListResp, 
 				CreateTime:     follow.CreateTime.Unix(),
 			})
 		}
+
+		defer threading.GoSafe(func() {
+			// 异步添加到缓存
+			if len(follows) < types.CacheMaxFollowCount && len(follows) > 0 {
+				follows = append(follows, &model.Follow{FollowedUserID: -1})
+			}
+			err = l.addCacheFollow(context.Background(), in.UserId, follows)
+			if err != nil {
+				logx.Errorf("addCacheFollow error: %v", err)
+			}
+		})
 	}
 	if len(curPage) > 0 {
 		pageLast := curPage[len(curPage)-1]
@@ -122,25 +132,13 @@ func (l *FollowListLogic) FollowList(in *pb.FollowListReq) (*pb.FollowListResp, 
 		uidFansCount[f.UserID] = f.FansCount
 	}
 	for _, cur := range curPage {
-		cur.FansCount = int64(uidFansCount[cur.FollowedUserId])
+		cur.FansCount = uidFansCount[cur.FollowedUserId]
 	}
 	ret := &pb.FollowListResp{
 		IsEnd:  isEnd,
 		Cursor: cursor,
 		Id:     lastId,
 		Items:  curPage,
-	}
-
-	if !isCache {
-		threading.GoSafe(func() {
-			if len(follows) < types.CacheMaxFollowCount && len(follows) > 0 {
-				follows = append(follows, &model.Follow{FollowedUserID: -1})
-			}
-			err = l.addCacheFollow(context.Background(), in.UserId, follows)
-			if err != nil {
-				logx.Errorf("addCacheFollow error: %v", err)
-			}
-		})
 	}
 
 	return ret, nil
@@ -150,24 +148,26 @@ func (l *FollowListLogic) cacheFollowUserIds(ctx context.Context, userId, cursor
 	key := userFollowKey(userId)
 	b, err := l.svcCtx.BizRedis.ExistsCtx(ctx, key)
 	if err != nil {
-		logx.Errorf("[cacheFollowUserIds] BizRedis.ExistsCtx error: %v", err)
+		l.Logger.Errorf("[cacheFollowUserIds] Redis Exists error: %v", err)
 	}
-	if b {
+	if b { // 进行了查询,热点数据续期
 		err = l.svcCtx.BizRedis.ExpireCtx(ctx, key, userFollowExpireTime)
 		if err != nil {
-			logx.Errorf("[cacheFollowUserIds] BizRedis.ExpireCtx error: %v", err)
+			l.Logger.Errorf("[cacheFollowUserIds] Redis Expire error: %v", err)
 		}
 	}
+	// 按负数倒序才缓存中读取数据,并限制条数为分页大小
+	// source 为关注时的时间戳, 最新关注的score值越大
 	pairs, err := l.svcCtx.BizRedis.ZrevrangebyscoreWithScoresAndLimitCtx(ctx, key, 0, cursor, 0, int(pageSize))
 	if err != nil {
-		logx.Errorf("[cacheFollowUserIds] BizRedis.ZrevrangebyscoreWithScoresAndLimitCtx error: %v", err)
+		l.Logger.Errorf("[cacheFollowUserIds] Redis ZrevrangebyscoreWithScoresAndLimit error: %v", err)
 		return nil, err
 	}
 	var uids []int64
 	for _, pair := range pairs {
 		uid, err := strconv.ParseInt(pair.Key, 10, 64)
 		if err != nil {
-			logx.Errorf("[cacheFollowUserIds] strconv.ParseInt error: %v", err)
+			l.Logger.Errorf("[cacheFollowUserIds] strconv.ParseInt error: %v", err)
 			continue
 		}
 		uids = append(uids, uid)

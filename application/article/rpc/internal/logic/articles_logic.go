@@ -80,8 +80,8 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 	var (
 		isEnd          bool
 		lastId, cursor int64
-		curPage        []*pb.ArticleItem
 		retArticles    []*model.Article
+		curPage        []*pb.ArticleItem
 	)
 	// 调用缓存查询忽略了error,我们期望尽最大可能的给用户返回数据,不会因为redis挂掉而返回错误
 	articleIds, _ := l.cacheArticles(l.ctx, in.UserId, in.Cursor, in.PageSize, in.SortType)
@@ -140,7 +140,7 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 			isEnd = true
 		}
 
-		threading.GoSafe(func() {
+		defer threading.GoSafe(func() {
 			// 异步添加到缓存
 			if len(articles) > 0 && len(articles) < types.DefaultLimit {
 				articles = append(articles, &model.Article{Id: -1})
@@ -203,26 +203,30 @@ func (l *ArticlesLogic) cacheArticles(ctx context.Context, uid, cursor, ps int64
 	key := articlesKey(uid, sortType)
 	b, err := l.svcCtx.BizRedis.ExistsCtx(ctx, key)
 	if err != nil {
-		logx.Errorf("ExistsCtx key: %s error: %v", key, err)
+		l.Logger.Errorf("ExistsCtx key: %s error: %v", key, err)
 	}
 	if b { // 进行了查询, 热点数据续期
 		err = l.svcCtx.BizRedis.ExpireCtx(ctx, key, articlesExpire)
 		if err != nil {
-			logx.Errorf("ExpireCtx key: %s error: %v", key, err)
+			l.Logger.Errorf("ExpireCtx key: %s error: %v", key, err)
 		}
 	}
 
 	// 按分数倒序从缓存中读取数据,并限制读条数为分页大小
+	// [1..............................................200] 按点赞数 总缓存
+	// [1.........................................190..200] 第一页 游标0时,给一个很大的值 1<<30 page 10 按分数从小到大排序, 取前10个
+	// [1...................................180...190..200] 第二页 游标190 取180-190 zrevrangebyscore t  200 0  withscores limit 0 3
 	pairs, err := l.svcCtx.BizRedis.ZrevrangebyscoreWithScoresAndLimitCtx(ctx, key, 0, cursor, 0, int(ps))
 	if err != nil {
-		logx.Errorf("ZrevrangebyscoreWithScoresAndLimitCtx key: %s error: %v", key, err)
+		l.Logger.Errorf("ZrevrangebyscoreWithScoresAndLimitCtx key: %s error: %v", key, err)
 		return nil, err
 	}
 	ids := make([]int64, 0, len(pairs))
 	for _, pair := range pairs {
 		id, err := strconv.ParseInt(pair.Key, 10, 64)
 		if err != nil {
-			logx.Errorf("strconv.ParseInt key: %s error: %v", pair.Key, err)
+			l.Logger.Errorf("strconv.ParseInt key: %s error: %v", pair.Key, err)
+			return nil, err
 		}
 		ids = append(ids, id)
 	}
