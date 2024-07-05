@@ -19,7 +19,7 @@ var _ gorm.Plugin = &CustomePlugin{}
 
 type CustomePlugin struct{}
 
-func NewCustomPlugin() *CustomePlugin {
+func NewCustomePlugin() *CustomePlugin {
 	return &CustomePlugin{}
 }
 
