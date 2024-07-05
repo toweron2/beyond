@@ -94,6 +94,7 @@ func (l *ArticlesLogic) Articles(in *pb.ArticlesReq) (*pb.ArticlesResp, error) {
 		}
 		articles, err := l.articleByIds(l.ctx, articleIds)
 		if err != nil {
+			l.Logger.Errorf("[Articles] articleByIds error: %v req: %v", err, in)
 			return nil, err
 		}
 

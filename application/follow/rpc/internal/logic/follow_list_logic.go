@@ -43,11 +43,10 @@ func (l *FollowListLogic) FollowList(in *pb.FollowListReq) (*pb.FollowListResp, 
 	}
 
 	var (
-		err             error
 		isEnd           bool
 		lastId, cursor  int64
 		followedUserIds []int64
-		follows         []*model.Follow
+		retFollows      []*model.Follow
 		curPage         []*pb.FollowItem
 	)
 
@@ -60,21 +59,15 @@ func (l *FollowListLogic) FollowList(in *pb.FollowListReq) (*pb.FollowListResp, 
 		if len(followUserIds) == 0 {
 			return &pb.FollowListResp{}, nil
 		}
-		follows, err = l.svcCtx.FollowModel.FindByFollowedUserIds(l.ctx, in.UserId, followUserIds)
+		follows, err := l.svcCtx.FollowModel.FindByFollowedUserIds(l.ctx, in.UserId, followUserIds)
 		if err != nil {
 			l.Logger.Errorf("[FollowList] FollowModel.FindByFollowedUserIds error: %v req: %v", err, in)
 			return nil, err
 		}
-		for _, follow := range follows {
-			followedUserIds = append(followedUserIds, follow.FollowedUserID)
-			curPage = append(curPage, &pb.FollowItem{
-				Id:             follow.ID,
-				FollowedUserId: follow.FollowedUserID,
-				CreateTime:     follow.CreateTime.Unix(),
-			})
-		}
+
+		retFollows = follows
 	} else {
-		follows, err = l.svcCtx.FollowModel.FindByUserId(l.ctx, in.UserId, types.CacheMaxFollowCount)
+		follows, err := l.svcCtx.FollowModel.FindByUserId(l.ctx, in.UserId, types.CacheMaxFollowCount)
 		if err != nil {
 			l.Logger.Errorf("[FollowList] FollowModel.FindByUserId error: %v req: %v", err, in)
 			return nil, err
@@ -82,20 +75,12 @@ func (l *FollowListLogic) FollowList(in *pb.FollowListReq) (*pb.FollowListResp, 
 		if len(follows) == 0 {
 			return &pb.FollowListResp{}, nil
 		}
-		var firstPageFollows []*model.Follow
+
 		if len(follows) > int(in.PageSize) {
-			firstPageFollows = follows[:in.PageSize]
+			retFollows = follows[:in.PageSize]
 		} else {
-			firstPageFollows = follows
+			retFollows = follows
 			isEnd = true
-		}
-		for _, follow := range firstPageFollows {
-			followedUserIds = append(followedUserIds, follow.FollowedUserID)
-			curPage = append(curPage, &pb.FollowItem{
-				Id:             follow.ID,
-				FollowedUserId: follow.FollowedUserID,
-				CreateTime:     follow.CreateTime.Unix(),
-			})
 		}
 
 		defer threading.GoSafe(func() {
@@ -105,10 +90,21 @@ func (l *FollowListLogic) FollowList(in *pb.FollowListReq) (*pb.FollowListResp, 
 			}
 			err = l.addCacheFollow(context.Background(), in.UserId, follows)
 			if err != nil {
-				logx.Errorf("addCacheFollow error: %v", err)
+				l.Logger.Errorf("addCacheFollow error: %v", err)
 			}
 		})
 	}
+
+	curPage = make([]*pb.FollowItem, 0, len(retFollows))
+	for _, follow := range retFollows {
+		followedUserIds = append(followedUserIds, follow.FollowedUserID)
+		curPage = append(curPage, &pb.FollowItem{
+			Id:             follow.ID,
+			FollowedUserId: follow.FollowedUserID,
+			CreateTime:     follow.CreateTime.Unix(),
+		})
+	}
+
 	if len(curPage) > 0 {
 		pageLast := curPage[len(curPage)-1]
 		lastId = pageLast.Id
@@ -190,7 +186,7 @@ func (l *FollowListLogic) addCacheFollow(ctx context.Context, userId int64, foll
 		}
 		_, err := l.svcCtx.BizRedis.ZaddCtx(ctx, key, score, strconv.FormatInt(follow.FollowedUserID, 10))
 		if err != nil {
-			logx.Errorf("[addCacheFollow] BizRedis.ZaddCtx error: %v", err)
+			l.Logger.Errorf("[addCacheFollow] BizRedis.ZaddCtx error: %v", err)
 			return err
 		}
 	}
