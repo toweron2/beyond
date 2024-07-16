@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+      namespace: default
+    spec:
+      containers:
+        - name: mariadb
+          image: woahbase/alpine-mysql:x86_64
+          env:
+            - name: MYSQL_ROOT_PWD
+              value: "123456"
+          ports:
+            - name: mariadb
+              containerPort: 3306
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  namespace: default
+spec:
+  type: NodePort
+  selector:
+    app: mariadb
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+
+
+
+      https://gitee:
+        com/oauth/authorize?client_id=78438485121321bc8c13a29b20b2d33c6f5bcdf01393e286a1e7d370ca34b2a8&redirect_uri=http%3A%2F%2F118:
+          31:
+            112:
+              140%2Flogin&response_type=code&scope=user_info+projects+pull_requests+hook&state=d5104dc76695721d:

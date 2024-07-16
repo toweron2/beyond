@@ -1,0 +1,18 @@
+apiVersion: v1
+appVersion: 1.6.5
+deprecated: true
+description: Drone is a Continuous Delivery system built on container technology
+home: https://drone.io/
+icon: https://drone.io/apple-touch-icon.png
+keywords:
+- continuous-delivery
+- continuous-deployment
+- continuous-integration
+- docker
+- drone
+- drone.io
+- go
+name: drone
+sources:
+- https://github.com/drone/drone
+version: 2.7.2
