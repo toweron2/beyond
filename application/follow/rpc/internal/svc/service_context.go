@@ -20,8 +20,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	rds := redis.MustNewRedis(c.BizRedis)
 	return &ServiceContext{
-		Config:   c,
-		DB:       db,
-		BizRedis: rds,
+		Config:           c,
+		DB:               db,
+		FollowModel:      model.NewFollowModel(db.DB),
+		FollowCountModel: model.NewFollowCountModel(db.DB),
+		BizRedis:         rds,
 	}
 }

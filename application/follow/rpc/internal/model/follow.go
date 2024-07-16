@@ -43,7 +43,7 @@ func (m *FollowModel) UpdateFields(ctx context.Context, id int64, values map[str
 func (m *FollowModel) FindByUserIDAndFollowedUserID(ctx context.Context, userId, followedUserId int64) (*Follow, error) {
 	var result Follow
 	err := m.db.WithContext(ctx).
-		Where("user_id = ? AND followed_user_id  = ?", userId, followedUserId).
+		Where("user_id = ? AND followed_user_id = ?", userId, followedUserId).
 		Order("id desc").
 		First(&result).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

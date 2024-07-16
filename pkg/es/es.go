@@ -19,7 +19,7 @@ type (
 		Addresses  []string
 		Username   string
 		Password   string
-		MaxRetries int
+		MaxRetries int `json:",optional"`
 	}
 
 	Es struct {

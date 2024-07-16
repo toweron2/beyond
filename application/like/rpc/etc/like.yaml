@@ -1,5 +1,5 @@
 Name: like.rpc
-ListenOn: 0.0.0.0:8080
+ListenOn: 0.0.0.0:6201
 Model: test
 
 Etcd:
@@ -9,6 +9,6 @@ Etcd:
 
 KqPusherConf:
   Brokers:
-#    - 127.0.0.1:9092
-    - 192.168.5.113:9092
+    - 127.0.0.1:9092
+#    - 192.168.5.113:9092
   Topic: topic-beyond-like

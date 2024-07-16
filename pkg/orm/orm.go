@@ -14,7 +14,7 @@ var _ logger.Interface = (*ormLog)(nil)
 
 type (
 	Config struct {
-		DSN          string
+		DataSource   string
 		MaxOpenConns int `json:",default=10"`
 		MaxIdleConns int `json:",default=100"`
 		MaxLifetime  int `json:",default=3600"`
@@ -63,7 +63,7 @@ func NewMysql(conf *Config) (*DB, error) {
 	if conf.MaxLifetime == 0 {
 		conf.MaxLifetime = 360
 	}
-	db, err := gorm.Open(mysql.Open(conf.DSN), &gorm.Config{
+	db, err := gorm.Open(mysql.Open(conf.DataSource), &gorm.Config{
 		SkipDefaultTransaction:                   true,
 		NamingStrategy:                           nil,
 		FullSaveAssociations:                     false,

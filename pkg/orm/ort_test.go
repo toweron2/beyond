@@ -10,7 +10,7 @@ import (
 func TestGorm(t *testing.T) {
 
 	db := MustNewMysql(&Config{
-		DSN:          "root:200212..@tcp(127.0.0.1:3306)/dev_bach_pet_lhp?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai",
+		DataSource:   "root:200212..@tcp(127.0.0.1:3306)/dev_bach_pet_lhp?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai",
 		MaxOpenConns: 10,
 		MaxIdleConns: 10,
 		MaxLifetime:  60,

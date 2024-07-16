@@ -1,10 +1,28 @@
 Name: follow.rpc
-ListenOn: 0.0.0.0:8080
+ListenOn: 0.0.0.0:6301
 Etcd:
   Hosts:
   - 127.0.0.1:2379
   Key: follow.rpc
+Log:
+  ServiceName: follow.rpc
+#  Level: severe
+  Level: info
+  Format: console
+  FilePath: ./log
+  Stat: false
+  Encoding: plain
+#  MaxContentLength: 500
 
+DB:
+  DataSource: "root:200212..@tcp(127.0.0.1:3306)/beyond?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai"
+  MaxIdleConns: 10
+  MaxOpenConns: 100
+  ConnMaxLifetime: 3600
+BizRedis:
+  Host: 127.0.0.1:6379
+  Pass:
+  Type: node
 Prometheus:
   Host: 0.0.0.0
   Port: 9101

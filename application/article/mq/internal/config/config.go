@@ -1,7 +1,6 @@
 package config
 
 import (
-	"beyond/pkg/consul"
 	"beyond/pkg/es"
 	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/service"
@@ -16,7 +15,7 @@ type Config struct {
 	ArticleKqConsumerConf kq.KqConf
 	DataSource            string
 	BizRedis              redis.RedisConf
-	Consul                consul.Conf
-	Es                    es.Config
-	UserRPC               zrpc.RpcClientConf
+	// Consul                consul.Conf
+	Es      es.Config
+	UserRPC zrpc.RpcClientConf
 }

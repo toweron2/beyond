@@ -2,7 +2,7 @@ package main
 
 import (
 	"beyond/application/like/mq/internal/config"
-	"beyond/application/like/mq/internal/logic"
+	"beyond/application/like/mq/internal/server"
 	"beyond/application/like/mq/internal/svc"
 	"context"
 	"flag"
@@ -23,7 +23,7 @@ func main() {
 	serviceGroup := service.NewServiceGroup()
 	defer serviceGroup.Stop()
 
-	for _, mq := range logic.Consumers(ctx, svcCtx) {
+	for _, mq := range server.Consumers(ctx, svcCtx) {
 		serviceGroup.Add(mq)
 	}
 

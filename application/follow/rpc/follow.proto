@@ -1,15 +1,18 @@
 syntax = "proto3";
 
 package service;
-import public "google/protobuf/empty.proto";
+//import public "google/protobuf/empty.proto";
 option go_package = "./pb";
 
+
 service Follow {
-  rpc Follow (FollowReq) returns (google.protobuf.Empty); // 关注
-  rpc UnFollow (UnFollowReq) returns (google.protobuf.Empty); // 取消关注
+  rpc Follow (FollowReq) returns (Empty); // 关注
+  rpc UnFollow (UnFollowReq) returns (Empty); // 取消关注
   rpc FollowList (FollowListReq) returns (FollowListResp); // 关注列表
   rpc FansList (FansListReq) returns (FansListResp); // 粉丝列表
 }
+
+message Empty{}
 
 message FollowReq {
   int64 userId = 1; // 关注着

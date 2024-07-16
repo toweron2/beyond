@@ -2,24 +2,42 @@
 
 ------
 
-
+### 服务启动
 
 ```shell
 #!/usr/bin/env bash
 # etcd
 /d/environment/etcd-v3.5.10-windows-amd64/etcd.exe &
+# etcdkeeper
+/d/environment/etcdkeeper/etcdkeeper.exe -p 2380 &
 # redis
 /d/environment/redis/redis-server.exe &
 # zookeeper
 /d/environment/zookeeper-3.9.2/bin/zkServer.cmd &
 # kafka
-d/environment/kafka/bin/windows/kafka-server-start.bat /d/environment/kafka/config/server.properties &
-
-
+/d/environment/kafka/bin/windows/kafka-server-start.bat /d/environment/kafka/config/server.properties &
+# canal
+# /d/environment/canal.deployer-1.1.8/bin/stop.sh
+/d/environment/canal.deployer-1.1.8/bin/startup.sh &
+# prometheus
 /d/environment/prometheus-2.53.0.windows-amd64/prometheus.exe --config.file=/d/environment/prometheus-2.53.0.windows-amd64/prometheus.yml &
+# grafana
+/d/environment/grafana-v11.1.0/bin/grafana-server.exe --homepath=/d/environment/grafana-v11.1.0 &
+# jaeger
 /d/environment/jaeger-1.58.0-windows-amd64/jaeger-all-in-one.exe & 
+# elasticsearch
 /d/environment/elasticsearch-8.14.2/bin/elasticsearch.bat &
+# kibana
 /d/environment/kibana-8.14.2/bin/kibana.bat &
+
+user.rpc 6001
+applet.api 8888
+article.rpc 6101
+article.api 80
+article.mq
+like.rpc 6201
+like.mq
+follow.rpc 6301
 ```
 
 
@@ -37,7 +55,7 @@ d/environment/kafka/bin/windows/kafka-server-start.bat /d/environment/kafka/conf
 
 
 
-### 第一课 (项目概述)
+### 第一课-项目概述
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/HsMIdfEa0ogEvmxCpRrcEOyenqc
 视频地址: https://www.bilibili.com/video/BV1op4y177iS/
@@ -47,9 +65,11 @@ d/environment/kafka/bin/windows/kafka-server-start.bat /d/environment/kafka/conf
 
 
 
-### 第二课  (微服务拆分&&项目结构 && 服务初始化 && 调用流程 && jwt验证 && 验证码注册 && 缓存 && 服务注册与发现)
+### 第二课-微服务拆分&&项目结构 && 服务初始化 && 调用流程 && jwt验证 && 验证码注册 && 缓存 && 服务注册与发现
 
-文档地址: https://pwmzlkcu3p.feishu.cn/docx/XX6xdpB0UoH0auxgPYlcxmninDb)   [视频](https://www.bilibili.com/video/BV1CH4y1Q7PM/
+文档地址: https://pwmzlkcu3p.feishu.cn/docx/XX6xdpB0UoH0auxgPYlcxmninDb)   
+
+视频地址: https://www.bilibili.com/video/BV1CH4y1Q7PM/
 
 ```shell
 #查看etcd中是否已注册，查看go-zero源码，看看在哪里注册的，怎么注册的
@@ -64,23 +84,21 @@ etcdctl lease timetolive 694d8a5192174527
 
 
 
-### 第三课 (自定义业务错误码，RPC和API服务通用错误码)
-
+### 第三课-自定义业务错误码，RPC和API服务通用错误码
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/XLB9dK9Cao3Z7HxPyEscu0P9nIb
 视频地址: https://www.bilibili.com/video/BV19u411w7WS/
 
 
 
-### 第四课 实现文章功能和互动功能(架构设计&表设计)
-
+### 第四课-实现文章功能和互动功能(架构设计&表设计)
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/U9FGdVAFuoFFiUxySsgcl5TMnke
 视频地址: https://www.bilibili.com/video/BV1Y8411q7uW/
 
 
 
-### 第五课
+### 第五课-项目结构说明 && 文件上传 && 对接阿里OSS && 文章发布 && 多服务联动测试
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/EBzWdSFR5oPVMJxP1oOcUGojnTd
 视频地址: https://www.bilibili.com/video/BV1k8411y7W5/
@@ -88,7 +106,7 @@ etcdctl lease timetolive 694d8a5192174527
 
 
 
-### 第六课
+### 第六课-docker安装Kafka & 在go-zero中使用kafka进行数据生产和消费 & grpcurl工具使用
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/O1u3d9pqWo4sZTx6NTxcOHhknmd
 视频地址: https://www.bilibili.com/video/BV1F84y1S74g/
@@ -298,7 +316,7 @@ grpcurl -plaintext -d '{"bizId": "article", "objId": 123, "userId": 234, "likeTy
 
 
 
-### 第七课
+### 第七课-Canal安装配置 & Mysql配置 & Canal解析Binlog投递到Kafka & Kafka消费Mysql数据变更事件
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/SvSwdAETNo3F0Axznp8ceaX1nIb
 视频地址: https://www.bilibili.com/video/BV1sz4y1G73u/
@@ -389,17 +407,17 @@ tar -zxvf canal.deployer-xxx.tar.gz
 
 ----
 
-### 第八课
+### 第八课-文章列表缓存 && 缓存代码 & 性能提升工具MapReduce
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/At4zdJzrFowGMmx5OjJcrS5mnir
 视频地址: https://www.bilibili.com/video/BV1S8411C7CY/
 
-### 第九课
+### 第九课-缓存一致性保证 & 缓存击穿 & 缓存穿透 & 缓存雪崩 
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/OW6Sd0ZsioU9LLxuUSXcUZgNnoD
 视频地址: https://www.bilibili.com/video/BV1oB4y1f7Tr/
 
-### 第十课
+### 第十课-在go-zero中集成GORM & 基于GORM实现关注服务核心功能 & GORM集成指标监控和链路追踪 & 服务对接Prometheus & 服务对接Jaeger
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/Si1Cd4EGxoZXkJxGenzcFttOnsh
 视频地址: https://www.bilibili.com/video/BV1je411R7iy/
@@ -805,13 +823,14 @@ cd /usr/local/elasticsearch-8.10.4
 ### 第十二课
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/QZcKdB4VXoUCRDxGilfcTaw7n8e
-视频地址: https://www.bilibili.com/video/BV1u64y177rL)
+视频地址: https://www.bilibili.com/video/BV1u64y177rL
 
 ### 第十三课
 
 文档地址: https://pwmzlkcu3p.feishu.cn/docx/BDNUdhmP4oec6ix1P1ZcqF3rnIc
-视频地址: https://www.bilibili.com/video/BV1bH4y1C7Uj)
+视频地址: https://www.bilibili.com/video/BV1bH4y1C7Uj
 
 ### 第十四课
 
-文档地址: https://pwmzlkcu3p.feishu.cn/docx/Ydd4dG8OSobJ1rxJFgacOBKvnSg)
+文档地址: https://pwmzlkcu3p.feishu.cn/docx/Ydd4dG8OSobJ1rxJFgacOBKvnSg
+视频地址: https://www.bilibili.com/video/BV1qK411b7cS

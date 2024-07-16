@@ -2,6 +2,7 @@ package main
 
 import (
 	"beyond/application/article/mq/internal/config"
+	"beyond/application/article/mq/internal/server"
 	"beyond/application/article/mq/internal/svc"
 	"context"
 	"flag"
@@ -25,7 +26,7 @@ func main() {
 	s := service.NewServiceGroup()
 	defer s.Stop()
 
-	for _, mq := range svc.Consumers(context.Background(), ctx) {
+	for _, mq := range server.Consumers(context.Background(), ctx) {
 		s.Add(mq)
 	}
 

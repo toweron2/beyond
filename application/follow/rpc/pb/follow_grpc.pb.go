@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,8 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FollowClient interface {
-	Follow(ctx context.Context, in *FollowReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UnFollow(ctx context.Context, in *UnFollowReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Follow(ctx context.Context, in *FollowReq, opts ...grpc.CallOption) (*Empty, error)
+	UnFollow(ctx context.Context, in *UnFollowReq, opts ...grpc.CallOption) (*Empty, error)
 	FollowList(ctx context.Context, in *FollowListReq, opts ...grpc.CallOption) (*FollowListResp, error)
 	FansList(ctx context.Context, in *FansListReq, opts ...grpc.CallOption) (*FansListResp, error)
 }
@@ -37,8 +36,8 @@ func NewFollowClient(cc grpc.ClientConnInterface) FollowClient {
 	return &followClient{cc}
 }
 
-func (c *followClient) Follow(ctx context.Context, in *FollowReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *followClient) Follow(ctx context.Context, in *FollowReq, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/service.Follow/Follow", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,8 +45,8 @@ func (c *followClient) Follow(ctx context.Context, in *FollowReq, opts ...grpc.C
 	return out, nil
 }
 
-func (c *followClient) UnFollow(ctx context.Context, in *UnFollowReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *followClient) UnFollow(ctx context.Context, in *UnFollowReq, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/service.Follow/UnFollow", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -77,8 +76,8 @@ func (c *followClient) FansList(ctx context.Context, in *FansListReq, opts ...gr
 // All implementations must embed UnimplementedFollowServer
 // for forward compatibility
 type FollowServer interface {
-	Follow(context.Context, *FollowReq) (*emptypb.Empty, error)
-	UnFollow(context.Context, *UnFollowReq) (*emptypb.Empty, error)
+	Follow(context.Context, *FollowReq) (*Empty, error)
+	UnFollow(context.Context, *UnFollowReq) (*Empty, error)
 	FollowList(context.Context, *FollowListReq) (*FollowListResp, error)
 	FansList(context.Context, *FansListReq) (*FansListResp, error)
 	mustEmbedUnimplementedFollowServer()
@@ -88,10 +87,10 @@ type FollowServer interface {
 type UnimplementedFollowServer struct {
 }
 
-func (UnimplementedFollowServer) Follow(context.Context, *FollowReq) (*emptypb.Empty, error) {
+func (UnimplementedFollowServer) Follow(context.Context, *FollowReq) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Follow not implemented")
 }
-func (UnimplementedFollowServer) UnFollow(context.Context, *UnFollowReq) (*emptypb.Empty, error) {
+func (UnimplementedFollowServer) UnFollow(context.Context, *UnFollowReq) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnFollow not implemented")
 }
 func (UnimplementedFollowServer) FollowList(context.Context, *FollowListReq) (*FollowListResp, error) {
